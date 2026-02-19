@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useCurrency } from "@/contexts/currency-context";
 import { createClient } from "@/lib/supabase/client";
 import { formatCurrency, getBudgetProgressColor } from "@/lib/utils";
 import { StatCard } from "@/components/shared/stat-card";
@@ -23,6 +24,7 @@ import type { Budget, Category, TransactionWithCategory } from "@/types/database
 
 export default function BudgetsPage() {
     const supabase = createClient();
+    const { currency } = useCurrency();
     const now = new Date();
     const [month, setMonth] = useState(now.getMonth() + 1);
     const [year, setYear] = useState(now.getFullYear());
@@ -183,11 +185,11 @@ export default function BudgetsPage() {
             {/* Stats */}
             {budgets.length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <StatCard label="Total Budget" value={formatCurrency(totalBudget)} icon={DollarSign} iconColor="text-violet-600" />
-                    <StatCard label="Total Spent" value={formatCurrency(totalSpent)} icon={TrendingDown} iconColor="text-red-500" />
+                    <StatCard label="Total Budget" value={formatCurrency(totalBudget, currency)} icon={DollarSign} iconColor="text-violet-600" />
+                    <StatCard label="Total Spent" value={formatCurrency(totalSpent, currency)} icon={TrendingDown} iconColor="text-red-500" />
                     <StatCard
                         label="Remaining"
-                        value={formatCurrency(remaining)}
+                        value={formatCurrency(remaining, currency)}
                         icon={PiggyBank}
                         iconColor={remaining >= 0 ? "text-emerald-600" : "text-red-500"}
                     />
@@ -214,7 +216,7 @@ export default function BudgetsPage() {
                                         <div className="flex-1">
                                             <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{b.categories?.name || "Budget"}</p>
                                             <p className={`text-xs ${isOver ? "text-red-500 font-medium" : "text-slate-400"}`}>
-                                                {formatCurrency(b.spent)} of {formatCurrency(Number(b.amount))}
+                                                {formatCurrency(b.spent, currency)} of {formatCurrency(Number(b.amount), currency)}
                                             </p>
                                         </div>
                                         <span className={`text-lg font-bold ${isOver ? "text-red-500" : "text-slate-800 dark:text-slate-200"}`}>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useCurrency } from "@/contexts/currency-context";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useTheme } from "@/components/theme-provider";
@@ -40,7 +41,7 @@ export default function SettingsPage() {
     const { theme, setTheme } = useTheme();
     const [userEmail, setUserEmail] = useState<string>("");
     const [userCreated, setUserCreated] = useState<string>("");
-    const [currency, setCurrency] = useState<string>("USD");
+    const { currency, setCurrency } = useCurrency();
     const [currencyOpen, setCurrencyOpen] = useState(false);
 
     useEffect(() => {
@@ -61,10 +62,6 @@ export default function SettingsPage() {
             }
         };
         getUser();
-
-        // Load saved currency
-        const saved = localStorage.getItem("wealthflow-currency");
-        if (saved) setCurrency(saved);
     }, [supabase.auth]);
 
     const handleSignOut = async () => {
@@ -76,7 +73,6 @@ export default function SettingsPage() {
 
     const handleCurrencyChange = (code: string) => {
         setCurrency(code);
-        localStorage.setItem("wealthflow-currency", code);
         setCurrencyOpen(false);
         toast.success(`Currency set to ${code}`);
     };

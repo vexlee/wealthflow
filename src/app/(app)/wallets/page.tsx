@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import { useCurrency } from "@/contexts/currency-context";
 import { createClient } from "@/lib/supabase/client";
 import { formatCurrency } from "@/lib/utils";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -49,6 +50,7 @@ const COLORS = ["#7c3aed", "#0891b2", "#10b981", "#f59e0b", "#ef4444", "#ec4899"
 
 export default function WalletsPage() {
     const supabase = createClient();
+    const { currency } = useCurrency();
     const [wallets, setWallets] = useState<(WalletType & { balance: number; lastTx: Transaction | null; sparkline: number[] })[]>([]);
     const [loading, setLoading] = useState(true);
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -61,7 +63,7 @@ export default function WalletsPage() {
     // Form state
     const [name, setName] = useState("");
     const [type, setType] = useState("manual");
-    const [currency, setCurrency] = useState("USD");
+    const [walletCurrency, setWalletCurrency] = useState("USD");
     const [icon, setIcon] = useState("💵");
     const [color, setColor] = useState("#7c3aed");
 
@@ -100,7 +102,7 @@ export default function WalletsPage() {
     const resetForm = () => {
         setName("");
         setType("manual");
-        setCurrency("USD");
+        setWalletCurrency("USD");
         setIcon("💵");
         setColor("#7c3aed");
         setEditWallet(null);
@@ -115,7 +117,7 @@ export default function WalletsPage() {
         setEditWallet(wallet);
         setName(wallet.name);
         setType(wallet.type || "manual");
-        setCurrency(wallet.currency_code || "USD");
+        setWalletCurrency(wallet.currency_code || "USD");
         setIcon(wallet.icon || "💵");
         setColor(wallet.color || "#7c3aed");
         setDialogOpen(true);
@@ -128,7 +130,7 @@ export default function WalletsPage() {
         if (editWallet) {
             const { error } = await supabase
                 .from("wallets")
-                .update({ name, type, currency_code: currency, icon, color })
+                .update({ name, type, currency_code: walletCurrency, icon, color })
                 .eq("id", editWallet.id);
 
             if (error) {
@@ -140,7 +142,7 @@ export default function WalletsPage() {
             const { data: { user } } = await supabase.auth.getUser();
             const { data: wallet, error } = await supabase
                 .from("wallets")
-                .insert({ name, type, currency_code: currency, icon, color, owner_id: user?.id })
+                .insert({ name, type, currency_code: walletCurrency, icon, color, owner_id: user?.id })
                 .select()
                 .single();
 
@@ -231,7 +233,7 @@ export default function WalletsPage() {
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Wallets</h1>
                     <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                        Total Balance: <span className="text-slate-900 dark:text-slate-100 font-semibold">{formatCurrency(totalBalance)}</span>
+                        Total Balance: <span className="text-slate-900 dark:text-slate-100 font-semibold">{formatCurrency(totalBalance, currency)}</span>
                     </p>
                 </div>
                 <Button
@@ -286,7 +288,7 @@ export default function WalletsPage() {
                                                 <ArrowUpRight className="w-3 h-3 text-red-400" />
                                             )}
                                             <span className="truncate">
-                                                {wallet.lastTx.merchant_name || "Transaction"} · {formatCurrency(Number(wallet.lastTx.amount))}
+                                                {wallet.lastTx.merchant_name || "Transaction"} · {formatCurrency(Number(wallet.lastTx.amount), currency)}
                                             </span>
                                             <span className="ml-auto shrink-0">{wallet.lastTx.date ? formatDateShort(wallet.lastTx.date) : ""}</span>
                                         </div>
@@ -339,7 +341,7 @@ export default function WalletsPage() {
                             </div>
                             <div className="space-y-2">
                                 <Label className="text-slate-600">Currency</Label>
-                                <Select value={currency} onValueChange={setCurrency}>
+                                <Select value={walletCurrency} onValueChange={setWalletCurrency}>
                                     <SelectTrigger className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">
                                         <SelectValue />
                                     </SelectTrigger>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef, Suspense } from "react";
+import { useCurrency } from "@/contexts/currency-context";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -19,7 +20,8 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-    Plus, ArrowLeftRight, Loader2, Trash2, ArrowDownLeft, ArrowUpRight, Search, Filter, Repeat,
+    Plus, ArrowLeftRight, Loader2, Trash2, ArrowDownLeft, ArrowUpRight, Search, Repeat,
+    RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { KeyboardShortcutsDialog } from "@/components/shared/keyboard-shortcuts-dialog";
@@ -28,6 +30,7 @@ import type { TransactionWithCategory, Wallet, Category } from "@/types/database
 
 function TransactionsContent() {
     const supabase = createClient();
+    const { currency } = useCurrency();
     const searchParams = useSearchParams();
     const [transactions, setTransactions] = useState<TransactionWithCategory[]>([]);
     const [wallets, setWallets] = useState<Wallet[]>([]);
@@ -53,6 +56,11 @@ function TransactionsContent() {
     const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
     const [merchantName, setMerchantName] = useState("");
     const [note, setNote] = useState("");
+
+    // Recurring form state
+    const [isRecurring, setIsRecurring] = useState(false);
+    const [recurringType, setRecurringType] = useState<"monthly" | "instalments">("monthly");
+    const [numInstalments, setNumInstalments] = useState("3");
 
     // Transfer state
     const [transferOpen, setTransferOpen] = useState(false);
@@ -157,6 +165,9 @@ function TransactionsContent() {
         setDate(new Date().toISOString().split("T")[0]);
         setMerchantName("");
         setNote("");
+        setIsRecurring(false);
+        setRecurringType("monthly");
+        setNumInstalments("3");
     };
 
     const openCreate = () => {
@@ -173,6 +184,10 @@ function TransactionsContent() {
         setDate(tx.date || new Date().toISOString().split("T")[0]);
         setMerchantName(tx.merchant_name || "");
         setNote(tx.note || "");
+        // Recurring toggle disabled when editing existing transactions
+        setIsRecurring(false);
+        setRecurringType("monthly");
+        setNumInstalments("3");
         setDialogOpen(true);
     };
 
@@ -196,9 +211,58 @@ function TransactionsContent() {
             else toast.success("Transaction updated");
         } else {
             const { data: { user } } = await supabase.auth.getUser();
-            const { error } = await supabase.from("transactions").insert({ ...txData, user_id: user?.id });
-            if (error) toast.error("Failed to add transaction");
-            else toast.success("Transaction added");
+
+            if (isRecurring) {
+                // Derive day of month from the chosen date
+                const selectedDate = new Date(date + "T00:00:00");
+                const dayOfMonth = selectedDate.getDate();
+                const totalInstalments = recurringType === "instalments" ? parseInt(numInstalments) : null;
+
+                // 1. Create the recurring template
+                const { data: recurringData, error: recurringError } = await supabase
+                    .from("recurring_transactions")
+                    .insert({
+                        user_id: user?.id,
+                        wallet_id: walletId,
+                        category_id: categoryId || null,
+                        amount: parseFloat(amount),
+                        type,
+                        day_of_month: dayOfMonth,
+                        merchant_name: merchantName || null,
+                        note: note || null,
+                        is_active: true,
+                        next_run_date: date,
+                        total_instalments: totalInstalments,
+                        instalments_paid: 0,
+                    })
+                    .select()
+                    .single();
+
+                if (recurringError || !recurringData) {
+                    toast.error("Failed to create recurring schedule");
+                    setSaving(false);
+                    return;
+                }
+
+                // 2. Insert the first transaction linked to the recurring template
+                const { error: txError } = await supabase.from("transactions").insert({
+                    ...txData,
+                    user_id: user?.id,
+                    recurring_id: recurringData.id,
+                });
+
+                if (txError) toast.error("Failed to add transaction");
+                else {
+                    const modeLabel = recurringType === "instalments"
+                        ? `${numInstalments}-month instalment`
+                        : "monthly recurring";
+                    toast.success(`Transaction added as ${modeLabel}`);
+                }
+            } else {
+                const { error } = await supabase.from("transactions").insert({ ...txData, user_id: user?.id });
+                if (error) toast.error("Failed to add transaction");
+                else toast.success("Transaction added");
+            }
         }
 
         setSaving(false);
@@ -447,6 +511,11 @@ function TransactionsContent() {
                                                             Pending
                                                         </Badge>
                                                     )}
+                                                    {tx.recurring_id && (
+                                                        <span title="Recurring transaction" className="flex items-center">
+                                                            <RefreshCw className="w-3 h-3 text-violet-500" />
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 <p className="text-[11px] text-slate-400 truncate">
                                                     {tx.categories?.name || "Uncategorized"} • {wallets.find((w) => w.id === tx.wallet_id)?.name || ""}
@@ -457,7 +526,7 @@ function TransactionsContent() {
                                                     "text-sm font-semibold tabular-nums",
                                                     tx.note?.startsWith("transfer:") ? "text-blue-500" : tx.type === "income" ? "text-emerald-600" : "text-red-500"
                                                 )}>
-                                                    {tx.note?.startsWith("transfer:") ? "" : tx.type === "income" ? "+" : "-"}{formatCurrency(Number(tx.amount))}
+                                                    {tx.note?.startsWith("transfer:") ? "" : tx.type === "income" ? "+" : "-"}{formatCurrency(Number(tx.amount), currency)}
                                                 </span>
                                             </div>
                                         </div>
@@ -622,6 +691,106 @@ function TransactionsContent() {
                             className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100"
                         />
                     </div>
+
+                    {/* Recurring Toggle — only for new transactions */}
+                    {!editId && (
+                        <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                            <button
+                                type="button"
+                                onClick={() => setIsRecurring((v) => !v)}
+                                className={cn(
+                                    "w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-all",
+                                    isRecurring
+                                        ? "border-violet-300 dark:border-violet-700 bg-violet-50 dark:bg-violet-500/10"
+                                        : "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700"
+                                )}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className={cn(
+                                        "w-8 h-8 rounded-lg flex items-center justify-center",
+                                        isRecurring ? "bg-violet-100 dark:bg-violet-500/20" : "bg-slate-200 dark:bg-slate-700"
+                                    )}>
+                                        <RefreshCw className={cn("w-4 h-4", isRecurring ? "text-violet-600 dark:text-violet-400" : "text-slate-400")} />
+                                    </div>
+                                    <div className="text-left">
+                                        <p className={cn("text-sm font-medium", isRecurring ? "text-violet-700 dark:text-violet-300" : "text-slate-600 dark:text-slate-400")}>
+                                            Make Recurring
+                                        </p>
+                                        <p className="text-[11px] text-slate-400">Repeat automatically each month</p>
+                                    </div>
+                                </div>
+                                <div className={cn(
+                                    "w-10 h-5 rounded-full transition-colors relative flex items-center",
+                                    isRecurring ? "bg-violet-500" : "bg-slate-300 dark:bg-slate-600"
+                                )}>
+                                    <span className={cn(
+                                        "absolute w-4 h-4 bg-white rounded-full shadow transition-all",
+                                        isRecurring ? "left-5" : "left-0.5"
+                                    )} />
+                                </div>
+                            </button>
+
+                            {/* Recurring options */}
+                            {isRecurring && (
+                                <div className="mt-3 space-y-3 px-1">
+                                    {/* Mode selector */}
+                                    <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                                        <button
+                                            type="button"
+                                            onClick={() => setRecurringType("monthly")}
+                                            className={cn(
+                                                "flex-1 text-xs font-medium py-1.5 px-2 rounded-md transition-all",
+                                                recurringType === "monthly"
+                                                    ? "bg-white dark:bg-slate-700 text-violet-600 dark:text-violet-400 shadow-sm"
+                                                    : "text-slate-500 hover:text-slate-700"
+                                            )}
+                                        >
+                                            🔁 Monthly (forever)
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setRecurringType("instalments")}
+                                            className={cn(
+                                                "flex-1 text-xs font-medium py-1.5 px-2 rounded-md transition-all",
+                                                recurringType === "instalments"
+                                                    ? "bg-white dark:bg-slate-700 text-violet-600 dark:text-violet-400 shadow-sm"
+                                                    : "text-slate-500 hover:text-slate-700"
+                                            )}
+                                        >
+                                            📅 Instalment
+                                        </button>
+                                    </div>
+
+                                    {/* Instalment count */}
+                                    {recurringType === "instalments" && (
+                                        <div className="space-y-1.5">
+                                            <Label className="text-xs text-slate-500 dark:text-slate-400">Number of months</Label>
+                                            <div className="flex items-center gap-2">
+                                                <Input
+                                                    type="number"
+                                                    min="2"
+                                                    max="60"
+                                                    value={numInstalments}
+                                                    onChange={(e) => setNumInstalments(e.target.value)}
+                                                    className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 w-24 text-center font-semibold"
+                                                />
+                                                <span className="text-sm text-slate-500">month{parseInt(numInstalments) !== 1 ? "s" : ""}</span>
+                                            </div>
+                                            <p className="text-[11px] text-slate-400">
+                                                Repeats on day {date ? new Date(date + "T00:00:00").getDate() : "—"} of each month for {numInstalments} months
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {recurringType === "monthly" && (
+                                        <p className="text-[11px] text-slate-400 px-1">
+                                            Repeats on day {date ? new Date(date + "T00:00:00").getDate() : "—"} of each month indefinitely
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </ResponsiveModal>
 

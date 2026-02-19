@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useCurrency } from "@/contexts/currency-context";
+import { usePrivacy } from "@/contexts/privacy-context";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { formatCurrency, formatDateShort, getDaysRemainingInMonth, getBudgetProgressColor } from "@/lib/utils";
 import { StatCard } from "@/components/shared/stat-card";
+import { PrivacyToggle } from "@/components/shared/privacy-toggle";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -27,6 +30,8 @@ const ResponsiveLine = dynamic(() => import("@nivo/line").then((m) => m.Responsi
 
 export default function DashboardPage() {
     const supabase = createClient();
+    const { currency } = useCurrency();
+    const { isPrivacyMode } = usePrivacy();
     const [wallets, setWallets] = useState<(WalletType & { balance: number })[]>([]);
     const [recentTransactions, setRecentTransactions] = useState<TransactionWithCategory[]>([]);
     const [budgets, setBudgets] = useState<(Budget & { categories: Category | null; spent: number })[]>([]);
@@ -176,6 +181,13 @@ export default function DashboardPage() {
         ? (budgets.reduce((sum, b) => sum + (Number(b.amount) - b.spent), 0)) / daysLeft
         : 0;
 
+    const maskValue = (value: string | number, isCurrency = true) => {
+        if (isPrivacyMode) {
+            return "••••••";
+        }
+        return isCurrency ? formatCurrency(Number(value), currency) : String(value);
+    };
+
     if (loading) {
         return (
             <div className="p-6 lg:p-8 space-y-6">
@@ -199,33 +211,38 @@ export default function DashboardPage() {
         <div className="p-6 lg:p-8 space-y-6">
             {/* Header */}
             <div>
-                <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Dashboard</h1>
-                <p className="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-400 mt-1">Your financial overview at a glance</p>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Dashboard</h1>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-400 mt-1">Your financial overview at a glance</p>
+                    </div>
+                    <PrivacyToggle />
+                </div>
             </div>
 
             {/* Stat Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard
                     label="Net Worth"
-                    value={formatCurrency(netWorth)}
+                    value={maskValue(netWorth)}
                     icon={DollarSign}
                     iconColor="text-violet-600"
                 />
                 <StatCard
                     label="Monthly Income"
-                    value={formatCurrency(monthlyIncome)}
+                    value={maskValue(monthlyIncome)}
                     icon={TrendingUp}
                     iconColor="text-emerald-600"
                 />
                 <StatCard
                     label="Monthly Expenses"
-                    value={formatCurrency(monthlyExpenses)}
+                    value={maskValue(monthlyExpenses)}
                     icon={TrendingDown}
                     iconColor="text-red-500"
                 />
                 <StatCard
                     label="Daily Budget"
-                    value={dailySuggested > 0 ? formatCurrency(dailySuggested) : "—"}
+                    value={dailySuggested > 0 ? maskValue(dailySuggested) : "—"}
                     icon={PiggyBank}
                     iconColor="text-amber-500"
                 />
@@ -239,7 +256,7 @@ export default function DashboardPage() {
                         <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400">Spending by Category</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="h-72">
+                        <div className={`h-72 ${isPrivacyMode ? "blur-sm opacity-50" : ""}`}>
                             {spendingByCategory.length > 0 ? (
                                 <ResponsivePie
                                     data={spendingByCategory}
@@ -284,7 +301,7 @@ export default function DashboardPage() {
                         <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400">Cash Flow (Last 30 Days)</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="h-72">
+                        <div className={`h-72 ${isPrivacyMode ? "blur-sm opacity-50" : ""}`}>
                             {cashFlowData.length > 0 ? (
                                 <ResponsiveLine
                                     data={cashFlowData}
@@ -376,7 +393,7 @@ export default function DashboardPage() {
                                         <p className="text-[11px] text-slate-400">{tx.date ? formatDateShort(tx.date) : ""}</p>
                                     </div>
                                     <span className={`text-sm font-semibold tabular-nums ${tx.type === "income" ? "text-emerald-600" : "text-red-500"}`}>
-                                        {tx.type === "income" ? "+" : "-"}{formatCurrency(Number(tx.amount))}
+                                        {tx.type === "income" ? "+" : "-"}{maskValue(Number(tx.amount))}
                                     </span>
                                 </div>
                             ))
@@ -418,7 +435,7 @@ export default function DashboardPage() {
                                                 <span className="text-sm text-slate-800 dark:text-slate-200">{b.categories?.name || "Budget"}</span>
                                             </div>
                                             <span className={`text-xs font-medium ${isOver ? "text-red-500" : "text-slate-500"}`}>
-                                                {formatCurrency(b.spent)} / {formatCurrency(Number(b.amount))}
+                                                {maskValue(b.spent)} / {maskValue(Number(b.amount))}
                                             </span>
                                         </div>
                                         <Progress
@@ -470,7 +487,7 @@ export default function DashboardPage() {
                                         <div>
                                             <p className="text-sm text-slate-500 dark:text-slate-400">{wallet.name}</p>
                                             <p className={`text-lg font-bold ${wallet.balance >= 0 ? "text-slate-900 dark:text-slate-100" : "text-red-500"}`}>
-                                                {formatCurrency(wallet.balance)}
+                                                {maskValue(wallet.balance)}
                                             </p>
                                         </div>
                                     </div>
