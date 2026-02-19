@@ -22,7 +22,6 @@ import {
     Plus, ArrowLeftRight, Loader2, Trash2, ArrowDownLeft, ArrowUpRight, Search, Filter, Repeat,
 } from "lucide-react";
 import { toast } from "sonner";
-import { ConfirmDelete } from "@/components/shared/confirm-delete";
 import { KeyboardShortcutsDialog } from "@/components/shared/keyboard-shortcuts-dialog";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import type { TransactionWithCategory, Wallet, Category } from "@/types/database";
@@ -37,9 +36,8 @@ function TransactionsContent() {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [saving, setSaving] = useState(false);
 
-    // Delete confirmation
-    const [deleteId, setDeleteId] = useState<string | null>(null);
-    const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+    // Undo delete
+    const pendingDeleteRef = useRef<{ id: string; timer: NodeJS.Timeout } | null>(null);
 
     // Filters
     const [filterType, setFilterType] = useState<string>("all");
@@ -209,26 +207,54 @@ function TransactionsContent() {
         refreshData();
     };
 
-    const handleDelete = async (id: string) => {
-        const { error } = await supabase.from("transactions").delete().eq("id", id);
-        if (error) toast.error("Failed to delete");
-        else {
-            toast.success("Transaction deleted");
-            refreshData();
+    const handleDeleteWithUndo = (id: string) => {
+        // Cancel any pending delete
+        if (pendingDeleteRef.current) {
+            clearTimeout(pendingDeleteRef.current.timer);
+            pendingDeleteRef.current = null;
         }
-    };
 
-    const confirmDelete = (id: string) => {
-        setDeleteId(id);
-        setConfirmDeleteOpen(true);
-    };
+        // Snapshot the item for potential restore
+        const deletedTx = transactions.find((tx) => tx.id === id);
+        if (!deletedTx) return;
 
-    const executeDelete = () => {
-        if (deleteId) {
-            handleDelete(deleteId);
-            setDeleteId(null);
-            setDialogOpen(false);
-        }
+        // Optimistically remove from local state
+        setTransactions((prev) => prev.filter((tx) => tx.id !== id));
+        setDialogOpen(false);
+
+        // Schedule the actual DB delete after 5 seconds
+        const timer = setTimeout(async () => {
+            pendingDeleteRef.current = null;
+            const { error } = await supabase.from("transactions").delete().eq("id", id);
+            if (error) {
+                // Restore on failure
+                setTransactions((prev) => [deletedTx, ...prev].sort((a, b) =>
+                    (b.date || "").localeCompare(a.date || "")
+                ));
+                toast.error("Failed to delete transaction");
+            }
+        }, 5000);
+
+        pendingDeleteRef.current = { id, timer };
+
+        // Show undo toast
+        toast("Transaction deleted", {
+            action: {
+                label: "Undo",
+                onClick: () => {
+                    if (pendingDeleteRef.current?.id === id) {
+                        clearTimeout(pendingDeleteRef.current.timer);
+                        pendingDeleteRef.current = null;
+                    }
+                    // Restore the item
+                    setTransactions((prev) => [deletedTx, ...prev].sort((a, b) =>
+                        (b.date || "").localeCompare(a.date || "")
+                    ));
+                    toast.success("Transaction restored");
+                },
+            },
+            duration: 5000,
+        });
     };
 
     // Transfer
@@ -482,7 +508,7 @@ function TransactionsContent() {
                             <Button
                                 variant="ghost"
                                 className="text-red-500 hover:text-red-600 hover:bg-red-50 mr-auto"
-                                onClick={() => confirmDelete(editId)}
+                                onClick={() => handleDeleteWithUndo(editId)}
                             >
                                 <Trash2 className="w-4 h-4 mr-1" />
                                 Delete
@@ -689,15 +715,6 @@ function TransactionsContent() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-
-            {/* Delete Confirmation */}
-            <ConfirmDelete
-                open={confirmDeleteOpen}
-                onOpenChange={setConfirmDeleteOpen}
-                onConfirm={executeDelete}
-                title="Delete Transaction"
-                description="This will permanently remove this transaction and update your wallet balance. This action cannot be undone."
-            />
 
             {/* Keyboard Shortcuts Help */}
             <KeyboardShortcutsDialog open={helpOpen} onOpenChange={setHelpOpen} shortcuts={allShortcuts} />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { formatCurrency } from "@/lib/utils";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -17,7 +17,6 @@ import {
 import { Plus, Wallet, Loader2, Trash2, ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import { toast } from "sonner";
 import { formatDateShort } from "@/lib/utils";
-import { ConfirmDelete } from "@/components/shared/confirm-delete";
 import type { Wallet as WalletType, Transaction } from "@/types/database";
 
 function MiniSparkline({ data, color }: { data: number[]; color: string }) {
@@ -56,9 +55,8 @@ export default function WalletsPage() {
     const [saving, setSaving] = useState(false);
     const [editWallet, setEditWallet] = useState<WalletType | null>(null);
 
-    // Delete confirmation
-    const [deleteWalletId, setDeleteWalletId] = useState<string | null>(null);
-    const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+    // Undo delete
+    const pendingDeleteRef = useRef<{ id: string; timer: NodeJS.Timeout } | null>(null);
 
     // Form state
     const [name, setName] = useState("");
@@ -167,27 +165,46 @@ export default function WalletsPage() {
         fetchWallets();
     };
 
-    const handleDelete = async (walletId: string) => {
-        const { error } = await supabase.from("wallets").delete().eq("id", walletId);
-        if (error) {
-            toast.error("Failed to delete wallet");
-        } else {
-            toast.success("Wallet deleted");
-            fetchWallets();
+    const handleDeleteWithUndo = (walletId: string) => {
+        // Cancel any pending delete
+        if (pendingDeleteRef.current) {
+            clearTimeout(pendingDeleteRef.current.timer);
+            pendingDeleteRef.current = null;
         }
-    };
 
-    const confirmDelete = (walletId: string) => {
-        setDeleteWalletId(walletId);
-        setConfirmDeleteOpen(true);
-    };
+        const deletedWallet = wallets.find((w) => w.id === walletId);
+        if (!deletedWallet) return;
 
-    const executeDelete = () => {
-        if (deleteWalletId) {
-            handleDelete(deleteWalletId);
-            setDeleteWalletId(null);
-            setDialogOpen(false);
-        }
+        // Optimistically remove
+        setWallets((prev) => prev.filter((w) => w.id !== walletId));
+        setDialogOpen(false);
+
+        // Schedule DB delete after 5 seconds
+        const timer = setTimeout(async () => {
+            pendingDeleteRef.current = null;
+            const { error } = await supabase.from("wallets").delete().eq("id", walletId);
+            if (error) {
+                setWallets((prev) => [...prev, deletedWallet]);
+                toast.error("Failed to delete wallet");
+            }
+        }, 5000);
+
+        pendingDeleteRef.current = { id: walletId, timer };
+
+        toast("Wallet deleted", {
+            action: {
+                label: "Undo",
+                onClick: () => {
+                    if (pendingDeleteRef.current?.id === walletId) {
+                        clearTimeout(pendingDeleteRef.current.timer);
+                        pendingDeleteRef.current = null;
+                    }
+                    setWallets((prev) => [...prev, deletedWallet]);
+                    toast.success("Wallet restored");
+                },
+            },
+            duration: 5000,
+        });
     };
 
     const totalBalance = wallets.reduce((sum, w) => sum + w.balance, 0);
@@ -376,7 +393,7 @@ export default function WalletsPage() {
                             <Button
                                 variant="ghost"
                                 className="text-red-500 hover:text-red-600 hover:bg-red-50 mr-auto"
-                                onClick={() => confirmDelete(editWallet.id)}
+                                onClick={() => handleDeleteWithUndo(editWallet.id)}
                             >
                                 <Trash2 className="w-4 h-4 mr-1" />
                                 Delete
@@ -398,14 +415,6 @@ export default function WalletsPage() {
                 </DialogContent>
             </Dialog>
 
-            {/* Delete Confirmation */}
-            <ConfirmDelete
-                open={confirmDeleteOpen}
-                onOpenChange={setConfirmDeleteOpen}
-                onConfirm={executeDelete}
-                title="Delete Wallet"
-                description="This will permanently delete this wallet and all its transactions. This action cannot be undone."
-            />
         </div>
     );
 }
