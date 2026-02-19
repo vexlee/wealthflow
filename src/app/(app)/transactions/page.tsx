@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -27,7 +27,7 @@ import { KeyboardShortcutsDialog } from "@/components/shared/keyboard-shortcuts-
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import type { TransactionWithCategory, Wallet, Category } from "@/types/database";
 
-export default function TransactionsPage() {
+function TransactionsContent() {
     const supabase = createClient();
     const searchParams = useSearchParams();
     const [transactions, setTransactions] = useState<TransactionWithCategory[]>([]);
@@ -702,5 +702,23 @@ export default function TransactionsPage() {
             {/* Keyboard Shortcuts Help */}
             <KeyboardShortcutsDialog open={helpOpen} onOpenChange={setHelpOpen} shortcuts={allShortcuts} />
         </div>
+    );
+}
+
+export default function TransactionsPage() {
+    return (
+        <Suspense fallback={
+            <div className="p-6 lg:p-8 space-y-4">
+                <div className="animate-pulse space-y-4">
+                    <div className="h-8 w-40 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+                    <div className="h-12 bg-slate-100 dark:bg-slate-800 rounded-xl" />
+                    {[...Array(5)].map((_, i) => (
+                        <div key={i} className="h-16 bg-slate-100 dark:bg-slate-800 rounded-xl" />
+                    ))}
+                </div>
+            </div>
+        }>
+            <TransactionsContent />
+        </Suspense>
     );
 }
