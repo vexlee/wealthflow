@@ -23,6 +23,38 @@ const CATEGORY_ICONS = [
     "💰", "📦", "🔧", "⚡", "💳", "🏦", "📊", "🎯",
 ];
 
+const CategoryGrid = ({ items, label, openEdit }: { items: Category[]; label: string; openEdit: (cat: Category) => void }) => (
+    <div>
+        <div className="flex items-center gap-2 mb-3">
+            <Badge variant="outline" className="text-[10px] uppercase tracking-wider border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400">
+                {label}
+            </Badge>
+            <span className="text-xs text-slate-400">{items.length} categories</span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {items.map((cat) => (
+                <Card
+                    key={cat.id}
+                    className="bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all cursor-pointer group"
+                    onClick={() => openEdit(cat)}
+                >
+                    <CardContent className="p-4 flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-lg shrink-0 group-hover:scale-105 transition-transform">
+                            {cat.icon || "📦"}
+                        </div>
+                        <div className="min-w-0">
+                            <p className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">{cat.name}</p>
+                            {cat.is_default && (
+                                <p className="text-[10px] text-slate-400">Default</p>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+            ))}
+        </div>
+    </div>
+);
+
 export default function CategoriesPage() {
     const supabase = createClient();
     const [categories, setCategories] = useState<Category[]>([]);
@@ -143,38 +175,6 @@ export default function CategoriesPage() {
         );
     }
 
-    const CategoryGrid = ({ items, label }: { items: Category[]; label: string }) => (
-        <div>
-            <div className="flex items-center gap-2 mb-3">
-                <Badge variant="outline" className="text-[10px] uppercase tracking-wider border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400">
-                    {label}
-                </Badge>
-                <span className="text-xs text-slate-400">{items.length} categories</span>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                {items.map((cat) => (
-                    <Card
-                        key={cat.id}
-                        className="bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all cursor-pointer group"
-                        onClick={() => openEdit(cat)}
-                    >
-                        <CardContent className="p-4 flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-lg shrink-0 group-hover:scale-105 transition-transform">
-                                {cat.icon || "📦"}
-                            </div>
-                            <div className="min-w-0">
-                                <p className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">{cat.name}</p>
-                                {cat.is_default && (
-                                    <p className="text-[10px] text-slate-400">Default</p>
-                                )}
-                            </div>
-                        </CardContent>
-                    </Card>
-                ))}
-            </div>
-        </div>
-    );
-
     return (
         <div className="p-6 lg:p-8 space-y-6">
             {/* Header */}
@@ -195,10 +195,10 @@ export default function CategoriesPage() {
             {categories.length > 0 ? (
                 <div className="space-y-8">
                     {expenseCategories.length > 0 && (
-                        <CategoryGrid items={expenseCategories} label="Expense" />
+                        <CategoryGrid items={expenseCategories} label="Expense" openEdit={openEdit} />
                     )}
                     {incomeCategories.length > 0 && (
-                        <CategoryGrid items={incomeCategories} label="Income" />
+                        <CategoryGrid items={incomeCategories} label="Income" openEdit={openEdit} />
                     )}
                 </div>
             ) : (

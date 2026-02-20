@@ -71,6 +71,34 @@ function TransactionsContent() {
     const [transferNote, setTransferNote] = useState("");
     const [transferSaving, setTransferSaving] = useState(false);
 
+    function resetForm() {
+        setEditId(null);
+        setAmount("");
+        setType("expense");
+        setWalletId(wallets[0]?.id || "");
+        setCategoryId("");
+        setDate(new Date().toISOString().split("T")[0]);
+        setMerchantName("");
+        setNote("");
+        setIsRecurring(false);
+        setRecurringType("monthly");
+        setNumInstalments("3");
+    }
+
+    function openCreate() {
+        resetForm();
+        setDialogOpen(true);
+    }
+
+    function openTransfer() {
+        setTransferFrom(wallets[0]?.id || "");
+        setTransferTo(wallets[1]?.id || "");
+        setTransferAmount("");
+        setTransferDate(new Date().toISOString().split("T")[0]);
+        setTransferNote("");
+        setTransferOpen(true);
+    }
+
     // Keyboard shortcuts
     const searchInputRef = useRef<HTMLInputElement>(null);
     const { helpOpen, setHelpOpen, allShortcuts } = useKeyboardShortcuts([
@@ -90,7 +118,8 @@ function TransactionsContent() {
             setLoadingMore(true);
             const offset = transactions.length;
             const { data: txData } = await supabase
-                .from("transactions").select("*, categories(*)")
+                .from("transactions").select("*, categories(*), wallets!inner(*)")
+                .neq("wallets.type", "crypto")
                 .order("date", { ascending: false }).range(offset, offset + PAGE_SIZE - 1);
             const newTx = (txData || []) as TransactionWithCategory[];
             setHasMore(newTx.length === PAGE_SIZE);
@@ -104,8 +133,8 @@ function TransactionsContent() {
         const init = async () => {
             setLoading(true);
             const [{ data: txData }, { data: walletData }, { data: catData }] = await Promise.all([
-                supabase.from("transactions").select("*, categories(*)").order("date", { ascending: false }).range(0, PAGE_SIZE - 1),
-                supabase.from("wallets").select("*"),
+                supabase.from("transactions").select("*, categories(*), wallets!inner(*)").neq("wallets.type", "crypto").order("date", { ascending: false }).range(0, PAGE_SIZE - 1),
+                supabase.from("wallets").select("*").neq("type", "crypto"),
                 supabase.from("categories").select("*").order("name"),
             ]);
             const txArr = (txData || []) as TransactionWithCategory[];
@@ -146,8 +175,8 @@ function TransactionsContent() {
     const refreshData = useCallback(async () => {
         setLoading(true);
         const [{ data: txData }, { data: walletData }] = await Promise.all([
-            supabase.from("transactions").select("*, categories(*)").order("date", { ascending: false }).range(0, PAGE_SIZE - 1),
-            supabase.from("wallets").select("*"),
+            supabase.from("transactions").select("*, categories(*), wallets!inner(*)").neq("wallets.type", "crypto").order("date", { ascending: false }).range(0, PAGE_SIZE - 1),
+            supabase.from("wallets").select("*").neq("type", "crypto"),
         ]);
         const txArr = (txData || []) as TransactionWithCategory[];
         setTransactions(txArr);
@@ -156,24 +185,7 @@ function TransactionsContent() {
         setLoading(false);
     }, [supabase]);
 
-    const resetForm = () => {
-        setEditId(null);
-        setAmount("");
-        setType("expense");
-        setWalletId(wallets[0]?.id || "");
-        setCategoryId("");
-        setDate(new Date().toISOString().split("T")[0]);
-        setMerchantName("");
-        setNote("");
-        setIsRecurring(false);
-        setRecurringType("monthly");
-        setNumInstalments("3");
-    };
 
-    const openCreate = () => {
-        resetForm();
-        setDialogOpen(true);
-    };
 
     const openEdit = (tx: TransactionWithCategory) => {
         setEditId(tx.id);
@@ -321,15 +333,6 @@ function TransactionsContent() {
         });
     };
 
-    // Transfer
-    const openTransfer = () => {
-        setTransferFrom(wallets[0]?.id || "");
-        setTransferTo(wallets[1]?.id || "");
-        setTransferAmount("");
-        setTransferDate(new Date().toISOString().split("T")[0]);
-        setTransferNote("");
-        setTransferOpen(true);
-    };
 
     const handleTransfer = async () => {
         if (!transferFrom || !transferTo || !transferAmount || transferFrom === transferTo) {

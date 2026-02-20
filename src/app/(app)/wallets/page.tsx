@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useCurrency } from "@/contexts/currency-context";
+import { useCryptoPrices } from "@/hooks/use-crypto-prices";
+import { SUPPORTED_CRYPTOS } from "@/lib/crypto";
 import { createClient } from "@/lib/supabase/client";
 import { formatCurrency } from "@/lib/utils";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -56,6 +58,8 @@ export default function WalletsPage() {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [saving, setSaving] = useState(false);
     const [editWallet, setEditWallet] = useState<WalletType | null>(null);
+
+    const { prices } = useCryptoPrices(wallets, currency);
 
     // Undo delete
     const pendingDeleteRef = useRef<{ id: string; timer: NodeJS.Timeout } | null>(null);
@@ -209,7 +213,14 @@ export default function WalletsPage() {
         });
     };
 
-    const totalBalance = wallets.reduce((sum, w) => sum + w.balance, 0);
+    const totalBalance = wallets.reduce((sum, w) => {
+        let wBalance = w.balance;
+        if (w.type === "crypto") {
+            const price = prices[w.currency_code || ""] || 0;
+            wBalance = w.balance * price;
+        }
+        return sum + wBalance;
+    }, 0);
 
     if (loading) {
         return (
@@ -273,9 +284,16 @@ export default function WalletsPage() {
                                     </div>
                                     <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">{wallet.name}</p>
                                     <div className="flex items-end justify-between gap-3">
-                                        <p className={`text-2xl font-bold tracking-tight ${wallet.balance >= 0 ? "text-slate-900 dark:text-slate-100" : "text-red-500"}`}>
-                                            {formatCurrency(wallet.balance, wallet.currency_code || "USD")}
-                                        </p>
+                                        <div className={`text-2xl font-bold tracking-tight ${wallet.balance >= 0 ? "text-slate-900 dark:text-slate-100" : "text-red-500"}`}>
+                                            {wallet.type === "crypto" ? (
+                                                <div className="flex flex-col">
+                                                    <span>{wallet.balance} {SUPPORTED_CRYPTOS.find(c => c.id === wallet.currency_code)?.symbol || wallet.currency_code}</span>
+                                                    <span className="text-sm font-normal text-slate-500">≈ {formatCurrency(wallet.balance * (prices[wallet.currency_code || ""] || 0), currency)}</span>
+                                                </div>
+                                            ) : (
+                                                formatCurrency(wallet.balance, wallet.currency_code || "USD")
+                                            )}
+                                        </div>
                                         {wallet.sparkline.length >= 2 && (
                                             <MiniSparkline data={wallet.sparkline} color={wallet.color || "#7c3aed"} />
                                         )}
@@ -328,7 +346,11 @@ export default function WalletsPage() {
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label className="text-slate-600">Type</Label>
-                                <Select value={type} onValueChange={setType}>
+                                <Select value={type} onValueChange={(val) => {
+                                    setType(val);
+                                    if (val === "crypto") setWalletCurrency("bitcoin");
+                                    else setWalletCurrency(currency || "USD");
+                                }}>
                                     <SelectTrigger className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">
                                         <SelectValue />
                                     </SelectTrigger>
@@ -340,18 +362,26 @@ export default function WalletsPage() {
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-slate-600">Currency</Label>
+                                <Label className="text-slate-600">{type === "crypto" ? "Crypto Coin" : "Currency"}</Label>
                                 <Select value={walletCurrency} onValueChange={setWalletCurrency}>
                                     <SelectTrigger className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
-                                        <SelectItem value="USD">USD ($)</SelectItem>
-                                        <SelectItem value="EUR">EUR (€)</SelectItem>
-                                        <SelectItem value="GBP">GBP (£)</SelectItem>
-                                        <SelectItem value="MYR">MYR (RM)</SelectItem>
-                                        <SelectItem value="SGD">SGD (S$)</SelectItem>
-                                        <SelectItem value="JPY">JPY (¥)</SelectItem>
+                                        {type === "crypto" ? (
+                                            SUPPORTED_CRYPTOS.map(c => (
+                                                <SelectItem key={c.id} value={c.id}>{c.name} ({c.symbol})</SelectItem>
+                                            ))
+                                        ) : (
+                                            <>
+                                                <SelectItem value="USD">USD ($)</SelectItem>
+                                                <SelectItem value="EUR">EUR (€)</SelectItem>
+                                                <SelectItem value="GBP">GBP (£)</SelectItem>
+                                                <SelectItem value="MYR">MYR (RM)</SelectItem>
+                                                <SelectItem value="SGD">SGD (S$)</SelectItem>
+                                                <SelectItem value="JPY">JPY (¥)</SelectItem>
+                                            </>
+                                        )}
                                     </SelectContent>
                                 </Select>
                             </div>
