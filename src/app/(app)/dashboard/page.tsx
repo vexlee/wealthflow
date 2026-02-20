@@ -59,42 +59,84 @@ export default function DashboardPage() {
     const [isMetricsModalOpen, setIsMetricsModalOpen] = useState(false);
     const [metricsConfig, setMetricsConfig] = useState<DashboardMetricsConfig>(DEFAULT_METRICS_CONFIG);
 
-    // Initialize layout and metrics from localStorage
+    // Initialize layout and metrics from localStorage and Supabase
     useEffect(() => {
-        const savedLayout = localStorage.getItem("wealthflow-dashboard-layout");
-        if (savedLayout) {
-            try {
-                setLayoutConfig(JSON.parse(savedLayout));
-            } catch (e) {
-                console.error("Failed to parse saved layout:", e);
+        const loadInitialConfigs = async () => {
+            // First try local storage for immediate load
+            const savedLayout = localStorage.getItem("wealthflow-dashboard-layout");
+            if (savedLayout) {
+                try {
+                    setLayoutConfig(JSON.parse(savedLayout));
+                } catch (e) {
+                    console.error("Failed to parse saved layout:", e);
+                    setLayoutConfig(DEFAULT_DASHBOARD_CONFIG);
+                }
+            } else {
                 setLayoutConfig(DEFAULT_DASHBOARD_CONFIG);
             }
-        } else {
-            setLayoutConfig(DEFAULT_DASHBOARD_CONFIG);
-        }
 
-        const savedMetrics = localStorage.getItem("wealthflow-dashboard-metrics");
-        if (savedMetrics) {
-            try {
-                setMetricsConfig(JSON.parse(savedMetrics));
-            } catch (e) {
-                console.error("Failed to parse saved metrics:", e);
+            const savedMetrics = localStorage.getItem("wealthflow-dashboard-metrics");
+            if (savedMetrics) {
+                try {
+                    setMetricsConfig(JSON.parse(savedMetrics));
+                } catch (e) {
+                    console.error("Failed to parse saved metrics:", e);
+                    setMetricsConfig(DEFAULT_METRICS_CONFIG);
+                }
+            } else {
                 setMetricsConfig(DEFAULT_METRICS_CONFIG);
             }
-        } else {
-            setMetricsConfig(DEFAULT_METRICS_CONFIG);
-        }
-        setIsLayoutLoaded(true);
-    }, []);
+            setIsLayoutLoaded(true);
 
-    const handleSaveLayout = (newConfig: DashboardSectionConfig[]) => {
+            // Fetch from Supabase and override if available
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                    const { data: profile } = await supabase
+                        .from('profiles')
+                        .select('dashboard_layout, dashboard_metrics')
+                        .eq('id', user.id)
+                        .single();
+
+                    if (profile) {
+                        if (profile.dashboard_layout) {
+                            const layout = profile.dashboard_layout as unknown as DashboardSectionConfig[];
+                            setLayoutConfig(layout);
+                            localStorage.setItem("wealthflow-dashboard-layout", JSON.stringify(layout));
+                        }
+                        if (profile.dashboard_metrics) {
+                            const metrics = profile.dashboard_metrics as unknown as DashboardMetricsConfig;
+                            setMetricsConfig(metrics);
+                            localStorage.setItem("wealthflow-dashboard-metrics", JSON.stringify(metrics));
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to fetch dashboard configs from Supabase", error);
+            }
+        };
+
+        loadInitialConfigs();
+    }, [supabase]);
+
+    const handleSaveLayout = async (newConfig: DashboardSectionConfig[]) => {
         setLayoutConfig(newConfig);
         localStorage.setItem("wealthflow-dashboard-layout", JSON.stringify(newConfig));
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            await supabase.from('profiles').upsert({ id: user.id, dashboard_layout: newConfig as any });
+        }
     };
 
-    const handleSaveMetrics = (newConfig: DashboardMetricsConfig) => {
+    const handleSaveMetrics = async (newConfig: DashboardMetricsConfig) => {
         setMetricsConfig(newConfig);
         localStorage.setItem("wealthflow-dashboard-metrics", JSON.stringify(newConfig));
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            await supabase.from('profiles').upsert({ id: user.id, dashboard_metrics: newConfig as any });
+        }
     };
 
     const isSectionVisible = (id: string) => {

@@ -10,6 +10,8 @@ interface ThemeContextType {
     resolvedTheme: "light" | "dark";
 }
 
+import { createClient } from "@/lib/supabase/client";
+
 const ThemeContext = createContext<ThemeContextType>({
     theme: "system",
     setTheme: () => { },
@@ -31,6 +33,24 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         if (stored) {
             setThemeState(stored);
         }
+
+        const fetchProfile = async () => {
+            const supabase = createClient();
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('theme')
+                    .eq('id', user.id)
+                    .single();
+
+                if (profile && profile.theme) {
+                    setThemeState(profile.theme as Theme);
+                    localStorage.setItem("wealthflow-theme", profile.theme);
+                }
+            }
+        };
+        fetchProfile();
     }, []);
 
     useEffect(() => {
@@ -62,6 +82,17 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const setTheme = (newTheme: Theme) => {
         setThemeState(newTheme);
         localStorage.setItem("wealthflow-theme", newTheme);
+
+        const updateProfile = async () => {
+            const supabase = createClient();
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                await supabase
+                    .from('profiles')
+                    .upsert({ id: user.id, theme: newTheme });
+            }
+        };
+        updateProfile();
     };
 
     return (
