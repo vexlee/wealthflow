@@ -162,7 +162,7 @@ export default function CategoriesPage() {
 
     if (loading) {
         return (
-            <div className="p-6 lg:p-8 space-y-6">
+            <div className="p-4 lg:p-8 space-y-6">
                 <div className="animate-pulse space-y-4">
                     <div className="h-8 w-40 bg-slate-200 dark:bg-slate-800 rounded-lg" />
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -176,7 +176,7 @@ export default function CategoriesPage() {
     }
 
     return (
-        <div className="p-6 lg:p-8 space-y-6">
+        <div className="p-4 lg:p-8 space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>

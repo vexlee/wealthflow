@@ -364,7 +364,7 @@ export default function InvestmentsPage() {
                             </div>
                             <div className="space-y-2">
                                 <Label>{tradeType === "buy" ? "Fiat Amount Spent" : "Fiat Received"}</Label>
-                                <Input type="number" step="0.01" value={fiatAmount} onChange={(e) => setFiatAmount(e.target.value)} placeholder="0.00" />
+                                <Input type="number" inputMode="decimal" step="0.01" value={fiatAmount} onChange={(e) => setFiatAmount(e.target.value)} placeholder="0.00" />
                             </div>
                         </div>
 
@@ -386,7 +386,7 @@ export default function InvestmentsPage() {
                             </div>
                             <div className="space-y-2">
                                 <Label>{tradeType === "buy" ? "Crypto Received" : "Crypto Amount Sold"}</Label>
-                                <Input type="number" step="any" value={cryptoAmount} onChange={(e) => setCryptoAmount(e.target.value)} placeholder="0.00" />
+                                <Input type="number" inputMode="decimal" step="any" value={cryptoAmount} onChange={(e) => setCryptoAmount(e.target.value)} placeholder="0.00" />
                             </div>
                         </div>
 
@@ -423,6 +423,7 @@ export default function InvestmentsPage() {
                             <Label>New Token Balance</Label>
                             <Input
                                 type="number"
+                                inputMode="decimal"
                                 step="any"
                                 value={newBalanceAmount}
                                 onChange={(e) => setNewBalanceAmount(e.target.value)}

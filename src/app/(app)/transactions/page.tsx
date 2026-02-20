@@ -405,7 +405,7 @@ function TransactionsContent() {
 
     if (loading) {
         return (
-            <div className="p-6 lg:p-8 space-y-4">
+            <div className="p-4 lg:p-8 space-y-4">
                 <div className="animate-pulse space-y-4">
                     <div className="h-8 w-40 bg-slate-200 dark:bg-slate-800 rounded-lg" />
                     <div className="h-12 bg-slate-100 dark:bg-slate-800 rounded-xl" />
@@ -418,7 +418,7 @@ function TransactionsContent() {
     }
 
     return (
-        <div className="p-6 lg:p-8 space-y-6">
+        <div className="p-4 lg:p-8 space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
@@ -447,39 +447,41 @@ function TransactionsContent() {
             </div>
 
             {/* Filters */}
-            <div className="flex flex-wrap gap-3">
-                <div className="relative flex-1 min-w-[200px]">
+            <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative w-full sm:flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <Input
                         ref={searchInputRef}
                         placeholder="Search transactions..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-9 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 shadow-sm"
+                        className="pl-9 w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 shadow-sm"
                     />
                 </div>
-                <Select value={filterType} onValueChange={setFilterType}>
-                    <SelectTrigger className="w-[130px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 shadow-sm">
-                        <SelectValue placeholder="Type" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
-                        <SelectItem value="all">All Types</SelectItem>
-                        <SelectItem value="income">Income</SelectItem>
-                        <SelectItem value="expense">Expense</SelectItem>
-                        <SelectItem value="transfer">Transfers</SelectItem>
-                    </SelectContent>
-                </Select>
-                <Select value={filterWallet} onValueChange={setFilterWallet}>
-                    <SelectTrigger className="w-[150px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 shadow-sm">
-                        <SelectValue placeholder="Wallet" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
-                        <SelectItem value="all">All Wallets</SelectItem>
-                        {wallets.map((w) => (
-                            <SelectItem key={w.id} value={w.id}>{w.icon} {w.name}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <Select value={filterType} onValueChange={setFilterType}>
+                        <SelectTrigger className="flex-1 sm:w-[130px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 shadow-sm">
+                            <SelectValue placeholder="Type" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+                            <SelectItem value="all">All Types</SelectItem>
+                            <SelectItem value="income">Income</SelectItem>
+                            <SelectItem value="expense">Expense</SelectItem>
+                            <SelectItem value="transfer">Transfers</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <Select value={filterWallet} onValueChange={setFilterWallet}>
+                        <SelectTrigger className="flex-1 sm:w-[150px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 shadow-sm">
+                            <SelectValue placeholder="Wallet" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+                            <SelectItem value="all">All Wallets</SelectItem>
+                            {wallets.map((w) => (
+                                <SelectItem key={w.id} value={w.id}>{w.icon} {w.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
 
             {/* Transaction List */}
@@ -496,7 +498,7 @@ function TransactionsContent() {
                                         <div
                                             key={tx.id}
                                             onClick={() => openEdit(tx)}
-                                            className="flex items-center gap-3 p-4 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                            className="flex items-center gap-3 p-4 hover:bg-slate-50 dark:hover:bg-slate-800 active:bg-slate-100 dark:active:bg-slate-800/80 transition-colors cursor-pointer sm:cursor-default"
                                         >
                                             <div className={cn(
                                                 "w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0",
@@ -628,6 +630,7 @@ function TransactionsContent() {
                         <Label className="text-slate-600 dark:text-slate-400">Amount</Label>
                         <Input
                             type="number"
+                            inputMode="decimal"
                             step="0.01"
                             placeholder="0.00"
                             value={amount}
@@ -771,6 +774,7 @@ function TransactionsContent() {
                                             <div className="flex items-center gap-2">
                                                 <Input
                                                     type="number"
+                                                    inputMode="decimal"
                                                     min="2"
                                                     max="60"
                                                     value={numInstalments}
@@ -798,85 +802,24 @@ function TransactionsContent() {
             </ResponsiveModal>
 
             {/* Transfer Dialog */}
-            <Dialog open={transferOpen} onOpenChange={setTransferOpen}>
-                <DialogContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 max-w-md shadow-xl">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <Repeat className="w-5 h-5 text-blue-500" />
-                            Transfer Between Wallets
-                        </DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 py-2">
-                        <div className="space-y-2">
-                            <Label className="text-slate-600 dark:text-slate-400">From Wallet</Label>
-                            <Select value={transferFrom} onValueChange={setTransferFrom}>
-                                <SelectTrigger className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">
-                                    <SelectValue placeholder="Source wallet" />
-                                </SelectTrigger>
-                                <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
-                                    {wallets.map((w) => (
-                                        <SelectItem key={w.id} value={w.id}>{w.icon} {w.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="flex justify-center">
-                            <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center">
-                                <ArrowDownLeft className="w-4 h-4 text-blue-500" />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label className="text-slate-600 dark:text-slate-400">To Wallet</Label>
-                            <Select value={transferTo} onValueChange={setTransferTo}>
-                                <SelectTrigger className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">
-                                    <SelectValue placeholder="Destination wallet" />
-                                </SelectTrigger>
-                                <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
-                                    {wallets.filter((w) => w.id !== transferFrom).map((w) => (
-                                        <SelectItem key={w.id} value={w.id}>{w.icon} {w.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label className="text-slate-600 dark:text-slate-400">Amount</Label>
-                            <Input
-                                type="number"
-                                step="0.01"
-                                placeholder="0.00"
-                                value={transferAmount}
-                                onChange={(e) => setTransferAmount(e.target.value)}
-                                className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-lg font-semibold"
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label className="text-slate-600 dark:text-slate-400">Date</Label>
-                            <Input
-                                type="date"
-                                value={transferDate}
-                                onChange={(e) => setTransferDate(e.target.value)}
-                                className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100"
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label className="text-slate-600 dark:text-slate-400">Note (optional)</Label>
-                            <Input
-                                placeholder="e.g., Moving savings..."
-                                value={transferNote}
-                                onChange={(e) => setTransferNote(e.target.value)}
-                                className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100"
-                            />
-                        </div>
-                    </div>
-                    <DialogFooter className="flex gap-2">
-                        <DialogClose asChild>
-                            <Button variant="outline" className="border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800">Cancel</Button>
-                        </DialogClose>
+            <ResponsiveModal
+                open={transferOpen}
+                onOpenChange={setTransferOpen}
+                title={
+                    <span className="flex items-center gap-2">
+                        <Repeat className="w-5 h-5 text-blue-500" />
+                        Transfer Between Wallets
+                    </span>
+                }
+                footer={
+                    <>
+                        <Button
+                            variant="outline"
+                            onClick={() => setTransferOpen(false)}
+                            className="border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
+                        >
+                            Cancel
+                        </Button>
                         <Button
                             onClick={handleTransfer}
                             disabled={transferSaving || !transferFrom || !transferTo || !transferAmount || transferFrom === transferTo}
@@ -884,9 +827,78 @@ function TransactionsContent() {
                         >
                             {transferSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Transfer"}
                         </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                    </>
+                }
+            >
+                <div className="space-y-4 py-2">
+                    <div className="space-y-2">
+                        <Label className="text-slate-600 dark:text-slate-400">From Wallet</Label>
+                        <Select value={transferFrom} onValueChange={setTransferFrom}>
+                            <SelectTrigger className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">
+                                <SelectValue placeholder="Source wallet" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+                                {wallets.map((w) => (
+                                    <SelectItem key={w.id} value={w.id}>{w.icon} {w.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="flex justify-center">
+                        <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center">
+                            <ArrowDownLeft className="w-4 h-4 text-blue-500" />
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-slate-600 dark:text-slate-400">To Wallet</Label>
+                        <Select value={transferTo} onValueChange={setTransferTo}>
+                            <SelectTrigger className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">
+                                <SelectValue placeholder="Destination wallet" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+                                {wallets.filter((w) => w.id !== transferFrom).map((w) => (
+                                    <SelectItem key={w.id} value={w.id}>{w.icon} {w.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-slate-600 dark:text-slate-400">Amount</Label>
+                        <Input
+                            type="number"
+                            inputMode="decimal"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={transferAmount}
+                            onChange={(e) => setTransferAmount(e.target.value)}
+                            className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-lg font-semibold"
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-slate-600 dark:text-slate-400">Date</Label>
+                        <Input
+                            type="date"
+                            value={transferDate}
+                            onChange={(e) => setTransferDate(e.target.value)}
+                            className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100"
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-slate-600 dark:text-slate-400">Note (optional)</Label>
+                        <Input
+                            placeholder="e.g., Moving savings..."
+                            value={transferNote}
+                            onChange={(e) => setTransferNote(e.target.value)}
+                            className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100"
+                        />
+                    </div>
+                </div>
+            </ResponsiveModal>
 
             {/* Keyboard Shortcuts Help */}
             <KeyboardShortcutsDialog open={helpOpen} onOpenChange={setHelpOpen} shortcuts={allShortcuts} />
@@ -897,7 +909,7 @@ function TransactionsContent() {
 export default function TransactionsPage() {
     return (
         <Suspense fallback={
-            <div className="p-6 lg:p-8 space-y-4">
+            <div className="p-4 lg:p-8 space-y-4">
                 <div className="animate-pulse space-y-4">
                     <div className="h-8 w-40 bg-slate-200 dark:bg-slate-800 rounded-lg" />
                     <div className="h-12 bg-slate-100 dark:bg-slate-800 rounded-xl" />

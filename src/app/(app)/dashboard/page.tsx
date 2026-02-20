@@ -26,6 +26,7 @@ import { CustomizeDashboardModal, DashboardSectionConfig, DEFAULT_DASHBOARD_CONF
 import { MetricsSettingsModal, DashboardMetricsConfig, DEFAULT_METRICS_CONFIG } from "@/components/dashboard/metrics-settings-modal";
 import { Button } from "@/components/ui/button";
 import { useCryptoPrices } from "@/hooks/use-crypto-prices";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { SUPPORTED_CRYPTOS } from "@/lib/crypto";
 import type { TransactionWithCategory, Wallet as WalletType, Budget, Category } from "@/types/database";
 
@@ -49,6 +50,7 @@ export default function DashboardPage() {
     const [cashFlowData, setCashFlowData] = useState<{ id: string; data: { x: string; y: number }[] }[]>([]);
     const [loading, setLoading] = useState(true);
     const [showOnboarding, setShowOnboarding] = useState(false);
+    const isMobile = useMediaQuery("(max-width: 640px)");
 
     // Layout customization state
     const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
@@ -320,7 +322,7 @@ export default function DashboardPage() {
 
     if (loading || !isLayoutLoaded) {
         return (
-            <div className="p-6 lg:p-8 space-y-6">
+            <div className="p-4 lg:p-8 space-y-6">
                 <div className="animate-pulse space-y-6">
                     <div className="h-8 w-48 bg-slate-200 dark:bg-slate-800 rounded-lg" />
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -466,34 +468,56 @@ export default function DashboardPage() {
                                         <CardContent>
                                             <div className={`h-72 ${isPrivacyMode ? "blur-sm opacity-50" : ""}`}>
                                                 {spendingByCategory.length > 0 ? (
-                                                    <ResponsivePie
-                                                        data={spendingByCategory}
-                                                        margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-                                                        innerRadius={0.6}
-                                                        padAngle={2}
-                                                        cornerRadius={4}
-                                                        colors={{ datum: "data.color" }}
-                                                        borderWidth={0}
-                                                        enableArcLabels={false}
-                                                        enableArcLinkLabels={true}
-                                                        arcLinkLabelsTextColor="#475569"
-                                                        arcLinkLabelsColor={{ from: "color" }}
-                                                        arcLinkLabelsThickness={2}
-                                                        arcLinkLabelsDiagonalLength={12}
-                                                        arcLinkLabelsStraightLength={8}
-                                                        theme={{
-                                                            text: { fill: "#475569" },
-                                                            tooltip: {
-                                                                container: {
-                                                                    background: "#ffffff",
-                                                                    color: "#1e293b",
-                                                                    borderRadius: "8px",
-                                                                    border: "1px solid #e2e8f0",
-                                                                    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                                                                },
-                                                            },
-                                                        }}
-                                                    />
+                                                    <div className="h-full flex flex-col">
+                                                        <div className="flex-1 min-h-0">
+                                                            <ResponsivePie
+                                                                data={spendingByCategory}
+                                                                margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+                                                                innerRadius={0.6}
+                                                                padAngle={2}
+                                                                cornerRadius={4}
+                                                                colors={{ datum: "data.color" }}
+                                                                borderWidth={0}
+                                                                enableArcLabels={false}
+                                                                enableArcLinkLabels={!isMobile}
+                                                                arcLinkLabelsTextColor="#475569"
+                                                                arcLinkLabelsColor={{ from: "color" }}
+                                                                arcLinkLabelsThickness={2}
+                                                                arcLinkLabelsDiagonalLength={12}
+                                                                arcLinkLabelsStraightLength={8}
+                                                                theme={{
+                                                                    text: { fill: "#475569" },
+                                                                    tooltip: {
+                                                                        container: {
+                                                                            background: "#ffffff",
+                                                                            color: "#1e293b",
+                                                                            borderRadius: "8px",
+                                                                            border: "1px solid #e2e8f0",
+                                                                            boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                                                                        },
+                                                                    },
+                                                                }}
+                                                            />
+                                                        </div>
+                                                        {isMobile && (
+                                                            <div className="mt-4 grid grid-cols-2 gap-2 max-h-24 overflow-y-auto pr-1">
+                                                                {spendingByCategory.map((category) => (
+                                                                    <div key={category.id} className="flex items-center gap-2">
+                                                                        <div
+                                                                            className="w-3 h-3 rounded-full shrink-0"
+                                                                            style={{ backgroundColor: category.color }}
+                                                                        />
+                                                                        <span className="text-xs text-slate-600 dark:text-slate-400 truncate flex-1">
+                                                                            {category.label}
+                                                                        </span>
+                                                                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                                                            {maskValue(category.value)}
+                                                                        </span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 ) : (
                                                     <div className="h-full flex items-center justify-center text-slate-400 text-sm">
                                                         No expenses this month yet
@@ -595,7 +619,7 @@ export default function DashboardPage() {
                                         <CardContent className="space-y-1">
                                             {recentTransactions.length > 0 ? (
                                                 recentTransactions.map((tx) => (
-                                                    <div key={tx.id} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                                                    <div key={tx.id} className="flex items-center gap-3 p-2.5 rounded-lg active:bg-slate-100 dark:active:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer sm:cursor-default">
                                                         <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-base">
                                                             {tx.categories?.icon || "📦"}
                                                         </div>

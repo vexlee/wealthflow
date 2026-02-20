@@ -81,7 +81,7 @@ export default function SettingsPage() {
     const selectedCurrency = CURRENCIES.find((c) => c.code === currency);
 
     return (
-        <div className="p-6 lg:p-8 space-y-6 max-w-2xl">
+        <div className="p-4 lg:p-8 space-y-6 max-w-2xl">
             <div>
                 <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                     Settings
@@ -145,11 +145,10 @@ export default function SettingsPage() {
                                 <button
                                     key={opt.value}
                                     onClick={() => setTheme(opt.value)}
-                                    className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all duration-200 ${
-                                        theme === opt.value
+                                    className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all duration-200 ${theme === opt.value
                                             ? "border-violet-500 bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400"
                                             : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 text-slate-500 dark:text-slate-400"
-                                    }`}
+                                        }`}
                                 >
                                     <opt.icon className="w-5 h-5" />
                                     <span className="text-xs font-medium">
@@ -193,9 +192,8 @@ export default function SettingsPage() {
                                     </span>
                                 </span>
                                 <ChevronRight
-                                    className={`w-4 h-4 text-slate-400 transition-transform ${
-                                        currencyOpen ? "rotate-90" : ""
-                                    }`}
+                                    className={`w-4 h-4 text-slate-400 transition-transform ${currencyOpen ? "rotate-90" : ""
+                                        }`}
                                 />
                             </button>
                             {currencyOpen && (
@@ -206,11 +204,10 @@ export default function SettingsPage() {
                                             onClick={() =>
                                                 handleCurrencyChange(c.code)
                                             }
-                                            className={`w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors first:rounded-t-xl last:rounded-b-xl ${
-                                                currency === c.code
+                                            className={`w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors first:rounded-t-xl last:rounded-b-xl ${currency === c.code
                                                     ? "bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400"
                                                     : "text-slate-700 dark:text-slate-300"
-                                            }`}
+                                                }`}
                                         >
                                             <span className="text-base font-semibold w-8">
                                                 {c.symbol}

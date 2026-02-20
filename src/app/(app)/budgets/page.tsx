@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { formatCurrency, getBudgetProgressColor } from "@/lib/utils";
 import { StatCard } from "@/components/shared/stat-card";
 import { EmptyState } from "@/components/shared/empty-state";
+import { ResponsiveModal } from "@/components/shared/responsive-modal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -141,7 +142,7 @@ export default function BudgetsPage() {
 
     if (loading) {
         return (
-            <div className="p-6 lg:p-8 space-y-6">
+            <div className="p-4 lg:p-8 space-y-6">
                 <div className="animate-pulse space-y-4">
                     <div className="h-8 w-40 bg-slate-200 dark:bg-slate-800 rounded-lg" />
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -153,7 +154,7 @@ export default function BudgetsPage() {
     }
 
     return (
-        <div className="p-6 lg:p-8 space-y-6">
+        <div className="p-4 lg:p-8 space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
@@ -244,40 +245,12 @@ export default function BudgetsPage() {
             )}
 
             {/* Dialog */}
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 max-w-md shadow-xl">
-                    <DialogHeader>
-                        <DialogTitle>{editId ? "Edit Budget" : "Set Budget"}</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 py-2">
-                        <div className="space-y-2">
-                            <Label className="text-slate-600">Category</Label>
-                            <Select value={categoryId} onValueChange={setCategoryId}>
-                                <SelectTrigger className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">
-                                    <SelectValue placeholder="Select category" />
-                                </SelectTrigger>
-                                <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 max-h-52">
-                                    {categories
-                                        .filter((c) => c.type === "expense" || c.type === null)
-                                        .map((c) => (
-                                            <SelectItem key={c.id} value={c.id}>{c.icon} {c.name}</SelectItem>
-                                        ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-2">
-                            <Label className="text-slate-600">Monthly Limit</Label>
-                            <Input
-                                type="number"
-                                step="0.01"
-                                placeholder="0.00"
-                                value={amount}
-                                onChange={(e) => setAmount(e.target.value)}
-                                className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-lg font-semibold"
-                            />
-                        </div>
-                    </div>
-                    <DialogFooter className="flex gap-2">
+            <ResponsiveModal
+                open={dialogOpen}
+                onOpenChange={setDialogOpen}
+                title={editId ? "Edit Budget" : "Set Budget"}
+                footer={
+                    <>
                         {editId && (
                             <Button
                                 variant="ghost"
@@ -288,9 +261,13 @@ export default function BudgetsPage() {
                                 Delete
                             </Button>
                         )}
-                        <DialogClose asChild>
-                            <Button variant="outline" className="border-slate-200 text-slate-600 hover:bg-slate-50">Cancel</Button>
-                        </DialogClose>
+                        <Button
+                            variant="outline"
+                            onClick={() => setDialogOpen(false)}
+                            className="border-slate-200 text-slate-600 hover:bg-slate-50"
+                        >
+                            Cancel
+                        </Button>
                         <Button
                             onClick={handleSave}
                             disabled={saving || !categoryId || !amount}
@@ -298,9 +275,39 @@ export default function BudgetsPage() {
                         >
                             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : editId ? "Update" : "Create"}
                         </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                    </>
+                }
+            >
+                <div className="space-y-4 py-2">
+                    <div className="space-y-2">
+                        <Label className="text-slate-600">Category</Label>
+                        <Select value={categoryId} onValueChange={setCategoryId}>
+                            <SelectTrigger className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">
+                                <SelectValue placeholder="Select category" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 max-h-52">
+                                {categories
+                                    .filter((c) => c.type === "expense" || c.type === null)
+                                    .map((c) => (
+                                        <SelectItem key={c.id} value={c.id}>{c.icon} {c.name}</SelectItem>
+                                    ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label className="text-slate-600">Monthly Limit</Label>
+                        <Input
+                            type="number"
+                            inputMode="decimal"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-lg font-semibold"
+                        />
+                    </div>
+                </div>
+            </ResponsiveModal>
 
             {/* Delete Confirmation */}
             <ConfirmDelete

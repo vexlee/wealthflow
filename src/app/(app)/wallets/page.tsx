@@ -7,6 +7,7 @@ import { SUPPORTED_CRYPTOS } from "@/lib/crypto";
 import { createClient } from "@/lib/supabase/client";
 import { formatCurrency } from "@/lib/utils";
 import { EmptyState } from "@/components/shared/empty-state";
+import { ResponsiveModal } from "@/components/shared/responsive-modal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -224,7 +225,7 @@ export default function WalletsPage() {
 
     if (loading) {
         return (
-            <div className="p-6 lg:p-8 space-y-6">
+            <div className="p-4 lg:p-8 space-y-6">
                 <div className="animate-pulse space-y-4">
                     <div className="h-8 w-32 bg-slate-200 dark:bg-slate-800 rounded-lg" />
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -238,7 +239,7 @@ export default function WalletsPage() {
     }
 
     return (
-        <div className="p-6 lg:p-8 space-y-6">
+        <div className="p-4 lg:p-8 space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
@@ -327,100 +328,12 @@ export default function WalletsPage() {
             )}
 
             {/* Create/Edit Dialog */}
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 max-w-md shadow-xl">
-                    <DialogHeader>
-                        <DialogTitle>{editWallet ? "Edit Wallet" : "Create Wallet"}</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 py-2">
-                        <div className="space-y-2">
-                            <Label className="text-slate-600">Wallet Name</Label>
-                            <Input
-                                placeholder="e.g., Cash, Bank Account"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100"
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label className="text-slate-600">Type</Label>
-                                <Select value={type} onValueChange={(val) => {
-                                    setType(val);
-                                    if (val === "crypto") setWalletCurrency("bitcoin");
-                                    else setWalletCurrency(currency || "USD");
-                                }}>
-                                    <SelectTrigger className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
-                                        <SelectItem value="manual">Manual</SelectItem>
-                                        <SelectItem value="bank">Bank</SelectItem>
-                                        <SelectItem value="crypto">Crypto</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-slate-600">{type === "crypto" ? "Crypto Coin" : "Currency"}</Label>
-                                <Select value={walletCurrency} onValueChange={setWalletCurrency}>
-                                    <SelectTrigger className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
-                                        {type === "crypto" ? (
-                                            SUPPORTED_CRYPTOS.map(c => (
-                                                <SelectItem key={c.id} value={c.id}>{c.name} ({c.symbol})</SelectItem>
-                                            ))
-                                        ) : (
-                                            <>
-                                                <SelectItem value="USD">USD ($)</SelectItem>
-                                                <SelectItem value="EUR">EUR (€)</SelectItem>
-                                                <SelectItem value="GBP">GBP (£)</SelectItem>
-                                                <SelectItem value="MYR">MYR (RM)</SelectItem>
-                                                <SelectItem value="SGD">SGD (S$)</SelectItem>
-                                                <SelectItem value="JPY">JPY (¥)</SelectItem>
-                                            </>
-                                        )}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label className="text-slate-600">Icon</Label>
-                            <div className="flex flex-wrap gap-2">
-                                {ICONS.map((ic) => (
-                                    <button
-                                        key={ic}
-                                        onClick={() => setIcon(ic)}
-                                        className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-all ${icon === ic
-                                            ? "bg-violet-100 ring-2 ring-violet-500 scale-110"
-                                            : "bg-slate-50 hover:bg-slate-100 border border-slate-200"
-                                            }`}
-                                    >
-                                        {ic}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label className="text-slate-600">Color</Label>
-                            <div className="flex flex-wrap gap-2">
-                                {COLORS.map((c) => (
-                                    <button
-                                        key={c}
-                                        onClick={() => setColor(c)}
-                                        className={`w-8 h-8 rounded-full transition-all ${color === c ? "ring-2 ring-slate-900 scale-110" : "hover:scale-105"
-                                            }`}
-                                        style={{ backgroundColor: c }}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                    <DialogFooter className="flex gap-2">
+            <ResponsiveModal
+                open={dialogOpen}
+                onOpenChange={setDialogOpen}
+                title={editWallet ? "Edit Wallet" : "Create Wallet"}
+                footer={
+                    <>
                         {editWallet && (
                             <Button
                                 variant="ghost"
@@ -431,11 +344,13 @@ export default function WalletsPage() {
                                 Delete
                             </Button>
                         )}
-                        <DialogClose asChild>
-                            <Button variant="outline" className="border-slate-200 text-slate-600 hover:bg-slate-50">
-                                Cancel
-                            </Button>
-                        </DialogClose>
+                        <Button
+                            variant="outline"
+                            onClick={() => setDialogOpen(false)}
+                            className="border-slate-200 text-slate-600 hover:bg-slate-50"
+                        >
+                            Cancel
+                        </Button>
                         <Button
                             onClick={handleSave}
                             disabled={saving || !name.trim()}
@@ -443,9 +358,98 @@ export default function WalletsPage() {
                         >
                             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : editWallet ? "Update" : "Create"}
                         </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                    </>
+                }
+            >
+                <div className="space-y-4 py-2">
+                    <div className="space-y-2">
+                        <Label className="text-slate-600">Wallet Name</Label>
+                        <Input
+                            placeholder="e.g., Cash, Bank Account"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label className="text-slate-600">Type</Label>
+                            <Select value={type} onValueChange={(val) => {
+                                setType(val);
+                                if (val === "crypto") setWalletCurrency("bitcoin");
+                                else setWalletCurrency(currency || "USD");
+                            }}>
+                                <SelectTrigger className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+                                    <SelectItem value="manual">Manual</SelectItem>
+                                    <SelectItem value="bank">Bank</SelectItem>
+                                    <SelectItem value="crypto">Crypto</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-slate-600">{type === "crypto" ? "Crypto Coin" : "Currency"}</Label>
+                            <Select value={walletCurrency} onValueChange={setWalletCurrency}>
+                                <SelectTrigger className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+                                    {type === "crypto" ? (
+                                        SUPPORTED_CRYPTOS.map(c => (
+                                            <SelectItem key={c.id} value={c.id}>{c.name} ({c.symbol})</SelectItem>
+                                        ))
+                                    ) : (
+                                        <>
+                                            <SelectItem value="USD">USD ($)</SelectItem>
+                                            <SelectItem value="EUR">EUR (€)</SelectItem>
+                                            <SelectItem value="GBP">GBP (£)</SelectItem>
+                                            <SelectItem value="MYR">MYR (RM)</SelectItem>
+                                            <SelectItem value="SGD">SGD (S$)</SelectItem>
+                                            <SelectItem value="JPY">JPY (¥)</SelectItem>
+                                        </>
+                                    )}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-slate-600">Icon</Label>
+                        <div className="flex flex-wrap gap-2">
+                            {ICONS.map((ic) => (
+                                <button
+                                    key={ic}
+                                    onClick={() => setIcon(ic)}
+                                    className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-all ${icon === ic
+                                        ? "bg-violet-100 ring-2 ring-violet-500 scale-110"
+                                        : "bg-slate-50 hover:bg-slate-100 border border-slate-200"
+                                        }`}
+                                >
+                                    {ic}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-slate-600">Color</Label>
+                        <div className="flex flex-wrap gap-2">
+                            {COLORS.map((c) => (
+                                <button
+                                    key={c}
+                                    onClick={() => setColor(c)}
+                                    className={`w-8 h-8 rounded-full transition-all ${color === c ? "ring-2 ring-slate-900 scale-110" : "hover:scale-105"
+                                        }`}
+                                    style={{ backgroundColor: c }}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </ResponsiveModal>
 
         </div>
     );

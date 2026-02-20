@@ -42,6 +42,14 @@ const navItems = [
     { href: "/settings", icon: Settings, label: "Settings" },
 ];
 
+const bottomNavItems = [
+    { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+    { href: "/wallets", icon: Wallet, label: "Wallets" },
+    { href: "/transactions", icon: ArrowLeftRight, label: "Transactions" },
+    { href: "/budgets", icon: PiggyBank, label: "Budgets" },
+    { href: "/settings", icon: Settings, label: "Settings" },
+];
+
 function SidebarContent({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
     return (
         <div className="flex flex-col h-full">
@@ -120,6 +128,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         ? userEmail.substring(0, 2).toUpperCase()
         : "WF";
 
+    const currentNavItem = navItems.find(item => pathname === item.href || pathname.startsWith(item.href + "/"));
+    const pageTitle = currentNavItem ? currentNavItem.label : "WealthFlow";
+
     return (
         <div className="min-h-screen bg-slate-50/80 dark:bg-slate-950 flex">
             {/* Desktop Sidebar */}
@@ -159,25 +170,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
             {/* Mobile Header */}
             <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800 shadow-sm">
-                <div className="flex items-center justify-between px-4 h-14">
-                    <div className="flex items-center gap-3">
-                        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-                            <SheetTrigger asChild>
-                                <Button variant="ghost" size="icon" className="text-slate-500 hover:text-slate-900 dark:hover:text-slate-200">
-                                    <Menu className="w-5 h-5" />
-                                </Button>
-                            </SheetTrigger>
-                            <SheetContent side="left" className="w-72 p-0">
-                                <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-                                <SidebarContent pathname={pathname} onNavigate={() => setMobileOpen(false)} />
-                            </SheetContent>
-                        </Sheet>
-                        <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center">
-                                <Wallet className="w-4 h-4 text-white" />
-                            </div>
-                            <span className="text-slate-900 dark:text-slate-100 font-semibold">WealthFlow</span>
-                        </div>
+                <div className="flex items-center justify-between px-4 h-14 relative">
+                    <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+                        <SheetTrigger asChild>
+                            <Button variant="ghost" size="icon" className="text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 -ml-2">
+                                <Menu className="w-5 h-5" />
+                            </Button>
+                        </SheetTrigger>
+                        <SheetContent side="left" className="w-72 p-0">
+                            <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                            <SidebarContent pathname={pathname} onNavigate={() => setMobileOpen(false)} />
+                        </SheetContent>
+                    </Sheet>
+
+                    {/* Centered Title */}
+                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-semibold text-slate-900 dark:text-slate-100">
+                        {pageTitle}
                     </div>
                     <Avatar className="w-8 h-8 border border-slate-200 dark:border-slate-700">
                         <AvatarFallback className="bg-gradient-to-br from-violet-500 to-violet-700 text-white text-xs font-semibold">
@@ -205,7 +213,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             {/* Mobile Bottom Nav */}
             <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-t border-slate-200/80 dark:border-slate-800 shadow-[0_-2px_10px_rgba(0,0,0,0.04)]">
                 <div className="flex items-center justify-around h-16 px-2 pb-safe">
-                    {navItems.map((item) => {
+                    {bottomNavItems.map((item) => {
                         const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
                         return (
                             <Link

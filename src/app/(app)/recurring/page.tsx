@@ -179,7 +179,7 @@ export default function RecurringPage() {
 
     if (loading) {
         return (
-            <div className="p-6 lg:p-8 space-y-4">
+            <div className="p-4 lg:p-8 space-y-4">
                 <div className="animate-pulse space-y-4">
                     <div className="h-8 w-48 bg-slate-200 dark:bg-slate-800 rounded-lg" />
                     {[...Array(3)].map((_, i) => (
@@ -341,7 +341,7 @@ export default function RecurringPage() {
     };
 
     return (
-        <div className="p-6 lg:p-8 space-y-6">
+        <div className="p-4 lg:p-8 space-y-6">
             {/* Header */}
             <div>
                 <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Recurring</h1>
@@ -460,6 +460,7 @@ export default function RecurringPage() {
                             <Label className="text-slate-600 dark:text-slate-400">Amount</Label>
                             <Input
                                 type="number"
+                                inputMode="decimal"
                                 min="0.01"
                                 step="0.01"
                                 value={editAmount}
@@ -512,6 +513,7 @@ export default function RecurringPage() {
                             <Label className="text-slate-600 dark:text-slate-400">Day of Month (1–28)</Label>
                             <Input
                                 type="number"
+                                inputMode="decimal"
                                 min="1"
                                 max="28"
                                 value={editDayOfMonth}
@@ -557,6 +559,7 @@ export default function RecurringPage() {
                                 <Label className="text-slate-600 dark:text-slate-400">Total Months</Label>
                                 <Input
                                     type="number"
+                                    inputMode="decimal"
                                     min={editItem ? Math.max(1, editItem.instalments_paid) : 1}
                                     step="1"
                                     value={editTotalInstalments}
