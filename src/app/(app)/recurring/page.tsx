@@ -3,8 +3,9 @@
 import { useEffect, useState, useCallback } from "react";
 import { useCurrency } from "@/contexts/currency-context";
 import { createClient } from "@/lib/supabase/client";
-import { formatCurrency } from "@/lib/utils";
-import { cn } from "@/lib/utils";
+import { formatCurrency, cn } from "@/lib/utils";
+import { StatCard } from "@/components/shared/stat-card";
+import { TrendingDown, DollarSign } from "lucide-react";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -199,140 +200,160 @@ export default function RecurringPage() {
         const remaining = isInstalment
             ? (item.total_instalments ?? 0) - item.instalments_paid
             : null;
+        const themeColor = item.type === "income" ? "#10b981" : "#ef4444";
 
         return (
             <Card className={cn(
-                "bg-white dark:bg-slate-900 border shadow-sm overflow-hidden transition-all",
+                "group relative bg-white dark:bg-slate-900 border rounded-[2rem] shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden",
                 item.is_active
                     ? "border-slate-200/80 dark:border-slate-800"
                     : "border-slate-200/40 dark:border-slate-800/60 opacity-60"
             )}>
-                <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
+                {/* Vibrant Background Glow */}
+                <div
+                    className="absolute inset-0 opacity-0 group-hover:opacity-[0.08] transition-opacity duration-700 pointer-events-none"
+                    style={{ background: `linear-gradient(135deg, ${themeColor}20, transparent 70%)` }}
+                />
+
+                {/* Side Accent Glow */}
+                <div
+                    className="absolute left-0 top-0 bottom-0 w-1.5 opacity-30 group-hover:opacity-60 transition-opacity duration-500"
+                    style={{ backgroundColor: themeColor }}
+                />
+
+                <CardContent className="p-7 relative z-10">
+                    <div className="flex items-start gap-4">
                         {/* Icon */}
-                        <div className={cn(
-                            "w-11 h-11 rounded-xl flex items-center justify-center text-lg shrink-0",
-                            item.type === "income"
-                                ? "bg-emerald-50 dark:bg-emerald-500/10"
-                                : "bg-red-50 dark:bg-red-500/10"
-                        )}>
+                        <div
+                            className="w-16 h-16 rounded-[2rem] flex items-center justify-center text-3xl shrink-0 shadow-sm transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3"
+                            style={{
+                                backgroundColor: `${themeColor}15`,
+                                color: themeColor
+                            }}
+                        >
                             {item.categories?.icon || (item.type === "income" ? "💰" : "📦")}
                         </div>
 
                         {/* Details */}
                         <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                <p className="text-lg font-black text-slate-900 dark:text-white tracking-tight leading-none truncate">
                                     {item.merchant_name || item.categories?.name || "Recurring"}
                                 </p>
                                 <Badge
                                     variant="outline"
                                     className={cn(
-                                        "text-[10px] px-1.5 py-0 shrink-0",
+                                        "text-[10px] font-black uppercase tracking-tighter px-2 py-0.5 rounded-full shrink-0",
                                         item.type === "income"
-                                            ? "border-emerald-300 text-emerald-600"
-                                            : "border-red-300 text-red-500"
+                                            ? "border-emerald-100 bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:border-emerald-500/20"
+                                            : "border-red-100 bg-red-50 text-red-500 dark:bg-red-500/10 dark:border-red-500/20"
                                     )}
                                 >
                                     {item.type}
                                 </Badge>
                                 {isInstalment && (
-                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-violet-300 text-violet-600 shrink-0">
+                                    <Badge variant="outline" className="text-[10px] font-black uppercase tracking-tighter px-2 py-0.5 rounded-full border-violet-100 bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:border-violet-500/20 shrink-0">
                                         Instalment
                                     </Badge>
                                 )}
                             </div>
 
-                            <div className="mt-1 flex items-center gap-3 text-[11px] text-slate-400 flex-wrap">
+                            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">
                                 <span>{item.categories?.name || "Uncategorized"}</span>
-                                {wallet && <span>• {wallet.icon} {wallet.name}</span>}
-                                <span>• Day {item.day_of_month} of month</span>
+                                {wallet && (
+                                    <>
+                                        <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700" />
+                                        <span>{wallet.icon} {wallet.name}</span>
+                                    </>
+                                )}
+                                <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700" />
+                                <span>Day {item.day_of_month}</span>
                             </div>
 
-                            {/* Amount */}
-                            <p className={cn(
-                                "mt-1.5 text-base font-bold tabular-nums",
-                                item.type === "income" ? "text-emerald-600" : "text-red-500"
-                            )}>
-                                {item.type === "income" ? "+" : "-"}{formatCurrency(Number(item.amount), currency)}
-                                <span className="text-xs font-normal text-slate-400 ml-1">/ month</span>
-                            </p>
+                            {/* Amount and Next Run */}
+                            <div className="flex items-end justify-between gap-4">
+                                <div>
+                                    <p className={cn(
+                                        "text-2xl font-black tabular-nums tracking-tight leading-none",
+                                        item.type === "income" ? "text-emerald-600" : "text-slate-900 dark:text-white"
+                                    )}>
+                                        {item.type === "income" ? "+" : "-"}{formatCurrency(Number(item.amount), currency)}
+                                        <span className="text-xs font-bold text-slate-400 dark:text-slate-500 ml-1.5">/ mo</span>
+                                    </p>
+
+                                    {item.is_active ? (
+                                        <p className="mt-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] flex items-center gap-1.5">
+                                            <RefreshCw className="w-3 h-3 animate-[spin_4s_linear_infinite]" />
+                                            Next Run: {getNextMonthLabel(item.next_run_date)}
+                                        </p>
+                                    ) : (
+                                        <div className="mt-3 flex items-center gap-1.5">
+                                            {isInstalment && item.instalments_paid >= (item.total_instalments ?? 0) ? (
+                                                <Badge variant="outline" className="text-[9px] font-black uppercase border-emerald-100 bg-emerald-50 text-emerald-600 px-2 py-0 rounded-full">
+                                                    Completed
+                                                </Badge>
+                                            ) : (
+                                                <Badge variant="outline" className="text-[9px] font-black uppercase border-slate-100 bg-slate-50 text-slate-400 px-2 py-0 rounded-full">
+                                                    Paused
+                                                </Badge>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Actions - Desktop Style */}
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => openEdit(item)}
+                                        className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-300 shadow-sm"
+                                        title="Edit"
+                                    >
+                                        <Pencil className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        onClick={() => handleToggle(item.id, item.is_active)}
+                                        disabled={toggling === item.id}
+                                        className={cn(
+                                            "p-2.5 rounded-xl transition-all duration-300 shadow-sm",
+                                            item.is_active
+                                                ? "bg-amber-50 text-amber-600 hover:bg-amber-100 dark:bg-amber-500/10"
+                                                : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-500/10"
+                                        )}
+                                        title={item.is_active ? "Pause" : "Resume"}
+                                    >
+                                        {toggling === item.id ? (
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                        ) : item.is_active ? (
+                                            <PauseCircle className="w-4 h-4" />
+                                        ) : (
+                                            <RefreshCw className="w-4 h-4" />
+                                        )}
+                                    </button>
+                                    <button
+                                        onClick={() => setConfirmDeleteId(item.id)}
+                                        className="p-2.5 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-500/10 transition-all duration-300 shadow-sm"
+                                        title="Delete"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
 
                             {/* Instalment progress */}
                             {isInstalment && progress !== null && (
-                                <div className="mt-2 space-y-1">
-                                    <div className="flex justify-between text-[11px] text-slate-400">
-                                        <span>{item.instalments_paid} of {item.total_instalments} paid</span>
-                                        <span>{remaining} remaining</span>
+                                <div className="mt-5 space-y-2">
+                                    <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                        <span>{item.instalments_paid} / {item.total_instalments} paid</span>
+                                        <span>{remaining} left</span>
                                     </div>
-                                    <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                    <div className="h-2 bg-slate-50 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-100 dark:border-slate-800">
                                         <div
-                                            className="h-full bg-gradient-to-r from-violet-500 to-violet-600 rounded-full transition-all"
-                                            style={{ width: `${progress}%` }}
+                                            className="h-full bg-gradient-to-r from-violet-500 to-violet-600 rounded-full transition-all duration-1000"
+                                            style={{ width: `${progress}%`, boxShadow: `0 0 10px rgba(124, 58, 237, 0.3)` }}
                                         />
                                     </div>
                                 </div>
                             )}
-
-                            {/* Next run date */}
-                            {item.is_active && (
-                                <p className="mt-2 text-[11px] text-slate-400 flex items-center gap-1">
-                                    <RefreshCw className="w-3 h-3" />
-                                    Next: {getNextMonthLabel(item.next_run_date)}
-                                </p>
-                            )}
-                            {!item.is_active && (
-                                <p className="mt-2 text-[11px] text-slate-400 flex items-center gap-1">
-                                    {isInstalment && item.instalments_paid >= (item.total_instalments ?? 0) ? (
-                                        <>
-                                            <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                                            <span className="text-emerald-600">Completed</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <PauseCircle className="w-3 h-3" />
-                                            Paused
-                                        </>
-                                    )}
-                                </p>
-                            )}
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex flex-col gap-1.5 shrink-0">
-                            <button
-                                onClick={() => openEdit(item)}
-                                className="w-8 h-8 rounded-lg flex items-center justify-center bg-violet-50 dark:bg-violet-500/10 text-violet-600 hover:bg-violet-100 dark:hover:bg-violet-500/20 transition-colors"
-                                title="Edit"
-                            >
-                                <Pencil className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                                onClick={() => handleToggle(item.id, item.is_active)}
-                                disabled={toggling === item.id}
-                                className={cn(
-                                    "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
-                                    item.is_active
-                                        ? "bg-amber-50 dark:bg-amber-500/10 text-amber-600 hover:bg-amber-100"
-                                        : "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 hover:bg-emerald-100"
-                                )}
-                                title={item.is_active ? "Pause" : "Resume"}
-                            >
-                                {toggling === item.id ? (
-                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                ) : item.is_active ? (
-                                    <PauseCircle className="w-3.5 h-3.5" />
-                                ) : (
-                                    <RefreshCw className="w-3.5 h-3.5" />
-                                )}
-                            </button>
-                            <button
-                                onClick={() => setConfirmDeleteId(item.id)}
-                                className="w-8 h-8 rounded-lg flex items-center justify-center bg-red-50 dark:bg-red-500/10 text-red-500 hover:bg-red-100 transition-colors"
-                                title="Delete"
-                            >
-                                <Trash2 className="w-3.5 h-3.5" />
-                            </button>
                         </div>
                     </div>
                 </CardContent>
@@ -343,42 +364,49 @@ export default function RecurringPage() {
     return (
         <div className="p-4 lg:p-8 space-y-6">
             {/* Header */}
-            <div>
-                <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Recurring</h1>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                    {recurring.length} scheduled {recurring.length === 1 ? "entry" : "entries"}
-                </p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Recurring</h1>
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
+                        {recurring.length} scheduled {recurring.length === 1 ? "entry" : "entries"}
+                    </p>
+                </div>
             </div>
 
             {/* Stats */}
             {recurring.length > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl p-4 shadow-sm">
-                        <p className="text-xs text-slate-400 mb-1">Active Schedules</p>
-                        <p className="text-2xl font-bold text-slate-800 dark:text-slate-200">{active.length}</p>
-                    </div>
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl p-4 shadow-sm">
-                        <p className="text-xs text-slate-400 mb-1">Monthly Outflow</p>
-                        <p className="text-2xl font-bold text-red-500">
-                            -{formatCurrency(
-                                active
-                                    .filter((r) => r.type === "expense")
-                                    .reduce((s, r) => s + Number(r.amount), 0),
-                                currency
-                            )}
-                        </p>
-                    </div>
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl p-4 shadow-sm">
-                        <p className="text-xs text-slate-400 mb-1">Monthly Inflow</p>
-                        <p className="text-2xl font-bold text-emerald-600">
-                            +{formatCurrency(
-                                active
-                                    .filter((r) => r.type === "income")
-                                    .reduce((s, r) => s + Number(r.amount), 0),
-                                currency
-                            )}
-                        </p>
-                    </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <StatCard
+                        label="Active Schedules"
+                        value={String(active.length)}
+                        icon={RefreshCw}
+                        theme="violet"
+                        compact
+                    />
+                    <StatCard
+                        label="Monthly Outflow"
+                        value={formatCurrency(
+                            active
+                                .filter((r) => r.type === "expense")
+                                .reduce((s, r) => s + Number(r.amount), 0),
+                            currency
+                        )}
+                        icon={TrendingDown}
+                        theme="rose"
+                        compact
+                    />
+                    <StatCard
+                        label="Monthly Inflow"
+                        value={formatCurrency(
+                            active
+                                .filter((r) => r.type === "income")
+                                .reduce((s, r) => s + Number(r.amount), 0),
+                            currency
+                        )}
+                        icon={DollarSign}
+                        theme="emerald"
+                        compact
+                    />
                 </div>
             )}
 

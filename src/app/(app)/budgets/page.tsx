@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useCurrency } from "@/contexts/currency-context";
 import { createClient } from "@/lib/supabase/client";
-import { formatCurrency, getBudgetProgressColor } from "@/lib/utils";
+import { formatCurrency, getBudgetProgressColor, cn } from "@/lib/utils";
 import { StatCard } from "@/components/shared/stat-card";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ResponsiveModal } from "@/components/shared/responsive-modal";
@@ -156,29 +156,29 @@ export default function BudgetsPage() {
     return (
         <div className="p-4 lg:p-8 space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Budgets</h1>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage your monthly spending limits</p>
+                    <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Budgets</h1>
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Manage your monthly spending limits</p>
                 </div>
                 <Button
                     onClick={openCreate}
-                    className="bg-gradient-to-r from-violet-600 to-violet-700 hover:from-violet-500 hover:to-violet-600 text-white shadow-lg shadow-violet-500/20"
+                    className="h-11 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 font-bold shadow-lg shadow-slate-200 dark:shadow-none transition-all duration-300 hover:scale-[1.02] px-6"
                 >
-                    <Plus className="w-4 h-4 mr-2" />
+                    <Plus className="w-5 h-5 mr-2" />
                     Set Budget
                 </Button>
             </div>
 
             {/* Month Selector */}
-            <div className="flex items-center justify-center gap-4">
-                <Button variant="ghost" size="icon" onClick={prevMonth} className="text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">
+            <div className="flex items-center justify-center p-1 bg-slate-50 dark:bg-slate-800/50 rounded-2xl w-fit mx-auto border border-slate-100 dark:border-slate-800">
+                <Button variant="ghost" size="icon" onClick={prevMonth} className="h-10 w-10 text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-xl hover:bg-white dark:hover:bg-slate-700 shadow-none hover:shadow-sm">
                     <ChevronLeft className="w-5 h-5" />
                 </Button>
-                <span className="text-lg font-semibold text-slate-800 dark:text-slate-200 min-w-[180px] text-center">
+                <span className="text-sm font-black text-slate-900 dark:text-white min-w-[160px] text-center uppercase tracking-[0.1em]">
                     {monthNames[month - 1]} {year}
                 </span>
-                <Button variant="ghost" size="icon" onClick={nextMonth} className="text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">
+                <Button variant="ghost" size="icon" onClick={nextMonth} className="h-10 w-10 text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-xl hover:bg-white dark:hover:bg-slate-700 shadow-none hover:shadow-sm">
                     <ChevronRight className="w-5 h-5" />
                 </Button>
             </div>
@@ -186,13 +186,13 @@ export default function BudgetsPage() {
             {/* Stats */}
             {budgets.length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <StatCard label="Total Budget" value={formatCurrency(totalBudget, currency)} icon={DollarSign} iconColor="text-violet-600" />
-                    <StatCard label="Total Spent" value={formatCurrency(totalSpent, currency)} icon={TrendingDown} iconColor="text-red-500" />
+                    <StatCard label="Total Budget" value={formatCurrency(totalBudget, currency)} icon={DollarSign} theme="indigo" />
+                    <StatCard label="Total Spent" value={formatCurrency(totalSpent, currency)} icon={TrendingDown} theme="rose" />
                     <StatCard
                         label="Remaining"
                         value={formatCurrency(remaining, currency)}
                         icon={PiggyBank}
-                        iconColor={remaining >= 0 ? "text-emerald-600" : "text-red-500"}
+                        theme={remaining >= 0 ? "emerald" : "rose"}
                     />
                 </div>
             )}
@@ -203,32 +203,76 @@ export default function BudgetsPage() {
                     {budgets.map((b) => {
                         const percentage = Math.min((b.spent / Number(b.amount)) * 100, 100);
                         const isOver = b.spent > Number(b.amount);
+                        const themeColor = "#7c3aed"; // Default theme color for budgets
                         return (
                             <Card
                                 key={b.id}
-                                className="bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                                className="group relative bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-[2rem] shadow-sm hover:shadow-2xl transition-all duration-500 cursor-pointer overflow-hidden"
                                 onClick={() => openEdit(b)}
                             >
-                                <CardContent className="p-5">
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-lg">
-                                            {b.categories?.icon || "📦"}
+                                {/* Dynamic Background Glow */}
+                                <div
+                                    className="absolute inset-0 opacity-[0.05] group-hover:opacity-[0.12] transition-opacity duration-700 pointer-events-none"
+                                    style={{ background: `linear-gradient(135deg, ${themeColor}20, transparent 70%)` }}
+                                />
+
+                                {/* Side Accent Glow */}
+                                <div
+                                    className="absolute left-0 top-0 bottom-0 w-1.5 opacity-30 group-hover:opacity-60 transition-opacity duration-500"
+                                    style={{ backgroundColor: isOver ? "#ef4444" : themeColor }}
+                                />
+
+                                <CardContent className="p-7 relative z-10">
+                                    <div className="flex items-start justify-between mb-6">
+                                        <div className="flex items-center gap-4">
+                                            <div
+                                                className="w-16 h-16 rounded-[2rem] flex items-center justify-center text-3xl shadow-sm transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3"
+                                                style={{
+                                                    backgroundColor: `${isOver ? "#ef4444" : themeColor}15`,
+                                                    color: isOver ? "#ef4444" : themeColor
+                                                }}
+                                            >
+                                                {b.categories?.icon || "📦"}
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1 pl-0.5">Category</p>
+                                                <p className="text-xl font-black text-slate-900 dark:text-white tracking-tight leading-none truncate">{b.categories?.name || "Budget"}</p>
+                                            </div>
                                         </div>
-                                        <div className="flex-1">
-                                            <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{b.categories?.name || "Budget"}</p>
-                                            <p className={`text-xs ${isOver ? "text-red-500 font-medium" : "text-slate-400"}`}>
-                                                {formatCurrency(b.spent, currency)} of {formatCurrency(Number(b.amount), currency)}
+                                        <div className="text-right">
+                                            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1">Usage</p>
+                                            <p className={`text-xl font-black tracking-tighter leading-none ${isOver ? "text-rose-500" : "text-slate-900 dark:text-white"}`}>
+                                                {Math.round(percentage)}%
                                             </p>
                                         </div>
-                                        <span className={`text-lg font-bold ${isOver ? "text-red-500" : "text-slate-800 dark:text-slate-200"}`}>
-                                            {Math.round(percentage)}%
-                                        </span>
                                     </div>
-                                    <Progress
-                                        value={percentage}
-                                        className="h-2 bg-slate-100 dark:bg-slate-800"
-                                        indicatorClassName={getBudgetProgressColor(percentage)}
-                                    />
+
+                                    <div className="space-y-4">
+                                        <div className="flex items-end justify-between font-black uppercase tracking-widest text-[10px]">
+                                            <span className={isOver ? "text-rose-500" : "text-slate-500"}>{formatCurrency(b.spent, currency)} spent</span>
+                                            <span className="text-slate-400/80">Limit: {formatCurrency(Number(b.amount), currency)}</span>
+                                        </div>
+                                        <div className="h-4 w-full bg-slate-50 dark:bg-slate-800/50 rounded-full overflow-hidden border border-slate-100 dark:border-slate-800/50">
+                                            <div
+                                                className={cn(
+                                                    "h-full rounded-full transition-all duration-1000",
+                                                    getBudgetProgressColor(percentage)
+                                                )}
+                                                style={{
+                                                    width: `${percentage}%`,
+                                                    boxShadow: percentage > 10 ? `0 0 15px ${isOver ? "#ef4444" : themeColor}40` : "none"
+                                                }}
+                                            />
+                                        </div>
+                                        {isOver && (
+                                            <div className="flex items-center gap-2 px-3 py-2 bg-rose-50 dark:bg-rose-500/10 rounded-xl border border-rose-100 dark:border-rose-500/20">
+                                                <TrendingDown className="w-3.5 h-3.5 text-rose-500" />
+                                                <p className="text-[10px] font-black text-rose-500 uppercase tracking-[0.1em]">
+                                                    Over budget by {formatCurrency(b.spent - Number(b.amount), currency)}
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
                                 </CardContent>
                             </Card>
                         );

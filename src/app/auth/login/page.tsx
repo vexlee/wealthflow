@@ -45,14 +45,17 @@ export default function LoginPage() {
                 <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-violet-300/30 rounded-full blur-3xl" />
             </div>
 
-            <Card className="w-full max-w-md relative z-10 bg-white/90 backdrop-blur-xl border-slate-200 shadow-2xl shadow-violet-500/5">
-                <CardHeader className="text-center space-y-4">
-                    <div className="mx-auto w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center shadow-lg shadow-violet-500/25">
-                        <Wallet className="w-7 h-7 text-white" />
+            <Card className="w-full max-w-md relative z-10 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-slate-200/50 dark:border-slate-800/50 rounded-[2rem] shadow-2xl shadow-violet-500/10 group overflow-hidden">
+                {/* Subtle Hover Glow */}
+                <div className="absolute -top-24 -right-24 w-48 h-48 bg-violet-500/10 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+
+                <CardHeader className="text-center space-y-4 pt-8">
+                    <div className="mx-auto w-16 h-16 rounded-[2rem] bg-gradient-to-br from-indigo-500 to-violet-700 flex items-center justify-center shadow-xl shadow-violet-500/20 transform transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3">
+                        <Wallet className="w-8 h-8 text-white" />
                     </div>
                     <div>
-                        <CardTitle className="text-2xl font-bold text-slate-900">Welcome back</CardTitle>
-                        <CardDescription className="text-slate-500 mt-1">
+                        <CardTitle className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Welcome back</CardTitle>
+                        <CardDescription className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mt-2">
                             Sign in to your WealthFlow account
                         </CardDescription>
                     </div>
@@ -65,7 +68,7 @@ export default function LoginPage() {
                             </div>
                         )}
                         <div className="space-y-2">
-                            <Label htmlFor="email" className="text-slate-600">Email</Label>
+                            <Label htmlFor="email" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email</Label>
                             <Input
                                 id="email"
                                 type="email"
@@ -73,11 +76,11 @@ export default function LoginPage() {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
-                                className="bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-violet-500 focus:ring-violet-500/20"
+                                className="h-12 bg-slate-50 dark:bg-slate-800/50 border-slate-200/50 dark:border-slate-800/50 text-slate-900 dark:text-white placeholder:text-slate-400 rounded-2xl focus:border-violet-500 focus:ring-violet-500/20 transition-all"
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="password" className="text-slate-600">Password</Label>
+                            <Label htmlFor="password" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Password</Label>
                             <Input
                                 id="password"
                                 type="password"
@@ -85,16 +88,16 @@ export default function LoginPage() {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
-                                className="bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-violet-500 focus:ring-violet-500/20"
+                                className="h-12 bg-slate-50 dark:bg-slate-800/50 border-slate-200/50 dark:border-slate-800/50 text-slate-900 dark:text-white placeholder:text-slate-400 rounded-2xl focus:border-violet-500 focus:ring-violet-500/20 transition-all"
                             />
                         </div>
                         <Button
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-gradient-to-r from-violet-600 to-violet-700 hover:from-violet-500 hover:to-violet-600 text-white shadow-lg shadow-violet-500/25 transition-all duration-200"
+                            className="h-12 w-full bg-gradient-to-r from-indigo-600 to-violet-700 hover:from-indigo-500 hover:to-violet-600 text-white rounded-2xl shadow-xl shadow-violet-500/20 transition-all duration-300 font-bold tracking-tight"
                         >
                             {loading ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <Loader2 className="w-5 h-5 animate-spin" />
                             ) : (
                                 <>
                                     Sign In

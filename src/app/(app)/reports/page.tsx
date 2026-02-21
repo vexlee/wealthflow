@@ -6,12 +6,11 @@ import { format, addMonths, subMonths } from "date-fns";
 import { ChevronLeft, ChevronRight, FileBarChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+    DropdownMenu,
+    DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { SummaryCards } from "@/components/reports/summary-cards";
 import { ReportCalendar } from "@/components/reports/report-calendar";
 import { CategoryBreakdown } from "@/components/reports/category-breakdown";
@@ -23,7 +22,7 @@ export default function ReportsPage() {
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [transactions, setTransactions] = useState<any[]>([]);
     const [wallets, setWallets] = useState<Wallet[]>([]);
-    const [selectedWalletId, setSelectedWalletId] = useState<string>("all");
+    const [selectedWalletIds, setSelectedWalletIds] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [income, setIncome] = useState(0);
     const [expenses, setExpenses] = useState(0);
@@ -47,8 +46,8 @@ export default function ReportsPage() {
             .lte("date", monthEnd)
             .order("date", { ascending: false });
 
-        if (selectedWalletId !== "all") {
-            query = query.eq("wallet_id", selectedWalletId);
+        if (selectedWalletIds.length > 0) {
+            query = query.in("wallet_id", selectedWalletIds);
         }
 
         const { data: monthTx, error } = await query;
@@ -58,8 +57,8 @@ export default function ReportsPage() {
             .select("*, categories(*)")
             .eq("is_active", true);
 
-        if (selectedWalletId !== "all") {
-            recurringTxQuery = recurringTxQuery.eq("wallet_id", selectedWalletId);
+        if (selectedWalletIds.length > 0) {
+            recurringTxQuery = recurringTxQuery.in("wallet_id", selectedWalletIds);
         }
 
         const { data: recurringData } = await recurringTxQuery;
@@ -153,7 +152,7 @@ export default function ReportsPage() {
         }
 
         setLoading(false);
-    }, [supabase, currentMonth, selectedWalletId]);
+    }, [supabase, currentMonth, selectedWalletIds]);
 
     useEffect(() => {
         fetchReportsData();
@@ -165,42 +164,67 @@ export default function ReportsPage() {
     return (
         <div className="p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
             {/* Header */}
-            <div className="space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between sm:gap-4">
-                <div className="flex items-center gap-2">
-                    <FileBarChart className="w-5 h-5 sm:w-6 sm:h-6 text-violet-600 shrink-0" />
-                    <div>
-                        <h1 className="text-lg sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
-                            Reports
-                        </h1>
-                    </div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
+                        <FileBarChart className="w-8 h-8 text-indigo-600" />
+                        Reports
+                    </h1>
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
+                        Analyze your financial performance and trends
+                    </p>
                 </div>
 
-                <div className="flex items-center gap-2 sm:gap-3">
-                    <Select value={selectedWalletId} onValueChange={setSelectedWalletId}>
-                        <SelectTrigger className="w-[120px] sm:w-[140px] h-9 sm:h-10 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl shadow-sm text-xs sm:text-sm font-medium focus:ring-violet-500 text-slate-800 dark:text-slate-200">
-                            <SelectValue placeholder="All Accounts" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl shadow-lg">
-                            <SelectItem value="all" className="focus:bg-slate-50 dark:focus:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer">
+                <div className="flex items-center gap-3">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                variant="outline"
+                                className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl px-5 h-12 font-bold shadow-sm hover:shadow-md transition-all text-slate-900 dark:text-white"
+                            >
+                                {selectedWalletIds.length === 0
+                                    ? "All Accounts"
+                                    : selectedWalletIds.length === 1
+                                        ? wallets.find(w => w.id === selectedWalletIds[0])?.name || "1 account"
+                                        : `${selectedWalletIds.length} accounts`}
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-56 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-2xl p-2">
+                            <DropdownMenuCheckboxItem
+                                checked={selectedWalletIds.length === 0}
+                                onCheckedChange={() => setSelectedWalletIds([])}
+                                className="rounded-xl focus:bg-slate-50 dark:focus:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer font-bold"
+                            >
                                 All Accounts
-                            </SelectItem>
+                            </DropdownMenuCheckboxItem>
                             {wallets.map((wallet) => (
-                                <SelectItem key={wallet.id} value={wallet.id} className="focus:bg-slate-50 dark:focus:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer">
+                                <DropdownMenuCheckboxItem
+                                    key={wallet.id}
+                                    checked={selectedWalletIds.includes(wallet.id)}
+                                    onCheckedChange={(checked) => {
+                                        if (checked) {
+                                            setSelectedWalletIds([...selectedWalletIds, wallet.id]);
+                                        } else {
+                                            setSelectedWalletIds(selectedWalletIds.filter(id => id !== wallet.id));
+                                        }
+                                    }}
+                                    className="rounded-xl focus:bg-slate-50 dark:focus:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer font-bold"
+                                >
                                     {wallet.name}
-                                </SelectItem>
+                                </DropdownMenuCheckboxItem>
                             ))}
-                        </SelectContent>
-                    </Select>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
 
-                    <div className="flex items-center gap-1 sm:gap-2 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl p-0.5 sm:p-1 shadow-sm">
-                        <Button variant="ghost" size="icon" onClick={handlePrevMonth} className="h-8 w-8 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">
-                            <ChevronLeft className="w-4 h-4" />
+                    <div className="flex items-center gap-1 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-1 shadow-sm h-12">
+                        <Button variant="ghost" size="icon" onClick={handlePrevMonth} className="h-10 w-10 text-slate-600 hover:text-slate-900 rounded-xl">
+                            <ChevronLeft className="w-5 h-5" />
                         </Button>
-                        <span className="text-xs sm:text-sm font-semibold min-w-[100px] sm:min-w-[120px] text-center text-slate-800 dark:text-slate-200">
+                        <span className="text-sm font-black min-w-[120px] text-center text-slate-900 dark:text-white uppercase tracking-widest">
                             {format(currentMonth, "MMM yyyy")}
                         </span>
-                        <Button variant="ghost" size="icon" onClick={handleNextMonth} className="h-8 w-8 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">
-                            <ChevronRight className="w-4 h-4" />
+                        <Button variant="ghost" size="icon" onClick={handleNextMonth} className="h-10 w-10 text-slate-600 hover:text-slate-900 rounded-xl">
+                            <ChevronRight className="w-5 h-5" />
                         </Button>
                     </div>
                 </div>

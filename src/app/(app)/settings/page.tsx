@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import {
     LogOut,
     Info,
@@ -83,39 +84,33 @@ export default function SettingsPage() {
     return (
         <div className="p-4 lg:p-8 space-y-6 max-w-2xl">
             <div>
-                <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                    Settings
-                </h1>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Settings</h1>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
                     Manage your account and preferences
                 </p>
             </div>
 
             {/* Profile */}
-            <Card className="bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 shadow-sm">
+            <Card className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-[2rem] shadow-sm overflow-hidden">
                 <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400 flex items-center gap-2">
-                        <User className="w-4 h-4" />
+                    <CardTitle className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                        <User className="w-3 h-3" />
                         Profile
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-1">
-                    <div className="flex items-center gap-4 py-3">
-                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center shadow-lg shadow-violet-500/20">
-                            <span className="text-lg font-bold text-white">
-                                {initials}
-                            </span>
+                <CardContent className="p-7 pt-2">
+                    <div className="flex items-center gap-5">
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-700 flex items-center justify-center shadow-xl shadow-indigo-500/20 text-2xl font-black text-white">
+                            {initials}
                         </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-base font-semibold text-slate-900 dark:text-slate-100 truncate">
+                        <div className="min-w-0 space-y-1">
+                            <p className="text-lg font-black text-slate-900 dark:text-white tracking-tight truncate">
                                 {userEmail || "Loading..."}
                             </p>
-                            <div className="flex items-center gap-1 mt-0.5">
+                            <div className="flex items-center gap-2">
                                 <Mail className="w-3 h-3 text-slate-400" />
-                                <p className="text-xs text-slate-400">
-                                    {userCreated
-                                        ? `Member since ${userCreated}`
-                                        : "Loading..."}
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                    {userCreated ? `Since ${userCreated}` : "Loading..."}
                                 </p>
                             </div>
                         </div>
@@ -124,100 +119,105 @@ export default function SettingsPage() {
             </Card>
 
             {/* Appearance */}
-            <Card className="bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 shadow-sm">
+            <Card className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-[2rem] shadow-sm overflow-hidden">
                 <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400 flex items-center gap-2">
-                        <Palette className="w-4 h-4" />
+                    <CardTitle className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                        <Palette className="w-3 h-3" />
                         Appearance
                     </CardTitle>
                 </CardHeader>
-                <CardContent>
-                    <div className="py-2">
-                        <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
-                            Theme
-                        </p>
-                        <div className="grid grid-cols-3 gap-2">
-                            {([
-                                { value: "light", icon: Sun, label: "Light" },
-                                { value: "dark", icon: Moon, label: "Dark" },
-                                { value: "system", icon: Monitor, label: "System" },
-                            ] as const).map((opt) => (
-                                <button
-                                    key={opt.value}
-                                    onClick={() => setTheme(opt.value)}
-                                    className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all duration-200 ${theme === opt.value
-                                        ? "border-violet-500 bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400"
-                                        : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 text-slate-500 dark:text-slate-400"
-                                        }`}
-                                >
-                                    <opt.icon className="w-5 h-5" />
-                                    <span className="text-xs font-medium">
-                                        {opt.label}
-                                    </span>
-                                </button>
-                            ))}
-                        </div>
+                <CardContent className="p-7 pt-2">
+                    <div className="grid grid-cols-3 gap-3">
+                        {([
+                            { value: "light", icon: Sun, label: "Light" },
+                            { value: "dark", icon: Moon, label: "Dark" },
+                            { value: "system", icon: Monitor, label: "System" },
+                        ] as const).map((opt) => (
+                            <button
+                                key={opt.value}
+                                onClick={() => setTheme(opt.value)}
+                                className={cn(
+                                    "group flex flex-col items-center gap-3 p-4 rounded-[1.5rem] border-2 transition-all duration-300",
+                                    theme === opt.value
+                                        ? "border-indigo-600 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 shadow-lg shadow-indigo-500/10"
+                                        : "border-slate-50 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-800/20 text-slate-400 hover:border-slate-200 dark:hover:border-slate-700"
+                                )}
+                            >
+                                <opt.icon className={cn(
+                                    "w-6 h-6 transition-transform duration-500 group-hover:scale-110",
+                                    theme === opt.value ? "text-indigo-600" : "text-slate-400"
+                                )} />
+                                <span className="text-[10px] font-black uppercase tracking-widest">
+                                    {opt.label}
+                                </span>
+                            </button>
+                        ))}
                     </div>
                 </CardContent>
             </Card>
 
             {/* Preferences */}
-            <Card className="bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 shadow-sm">
+            <Card className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-[2rem] shadow-sm overflow-hidden">
                 <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400 flex items-center gap-2">
-                        <DollarSign className="w-4 h-4" />
+                    <CardTitle className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                        <DollarSign className="w-3 h-3" />
                         Preferences
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-1">
-                    {/* Currency */}
-                    <div className="py-2">
-                        <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                <CardContent className="p-7 pt-2 space-y-6">
+                    <div className="space-y-3">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">
                             Default Currency
                         </p>
                         <div className="relative">
                             <button
                                 onClick={() => setCurrencyOpen(!currencyOpen)}
-                                className="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-colors text-left"
+                                className="w-full flex items-center justify-between p-4 rounded-[1.5rem] border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/20 hover:border-indigo-600 transition-all duration-300 shadow-sm"
                             >
-                                <span className="flex items-center gap-2">
-                                    <span className="text-lg font-semibold text-violet-600 dark:text-violet-400 w-8">
+                                <span className="flex items-center gap-4">
+                                    <span className="text-2xl font-black text-indigo-600 w-8">
                                         {selectedCurrency?.symbol}
                                     </span>
-                                    <span className="text-sm text-slate-700 dark:text-slate-300">
-                                        {selectedCurrency?.name}
-                                    </span>
-                                    <span className="text-xs text-slate-400 font-mono">
-                                        ({selectedCurrency?.code})
-                                    </span>
+                                    <div className="flex flex-col leading-none">
+                                        <span className="text-sm font-black text-slate-900 dark:text-white tracking-tight">
+                                            {selectedCurrency?.name}
+                                        </span>
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                                            {selectedCurrency?.code}
+                                        </span>
+                                    </div>
                                 </span>
                                 <ChevronRight
-                                    className={`w-4 h-4 text-slate-400 transition-transform ${currencyOpen ? "rotate-90" : ""
-                                        }`}
+                                    className={cn(
+                                        "w-5 h-5 text-slate-400 transition-transform duration-300",
+                                        currencyOpen ? "rotate-90" : ""
+                                    )}
                                 />
                             </button>
                             {currencyOpen && (
-                                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-10 max-h-48 overflow-y-auto">
+                                <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[1.5rem] shadow-2xl z-50 max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-300">
                                     {CURRENCIES.map((c) => (
                                         <button
                                             key={c.code}
-                                            onClick={() =>
-                                                handleCurrencyChange(c.code)
-                                            }
-                                            className={`w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors first:rounded-t-xl last:rounded-b-xl ${currency === c.code
-                                                ? "bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400"
-                                                : "text-slate-700 dark:text-slate-300"
-                                                }`}
+                                            onClick={() => handleCurrencyChange(c.code)}
+                                            className={cn(
+                                                "w-full flex items-center gap-4 px-5 py-3.5 text-left transition-all",
+                                                currency === c.code
+                                                    ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600"
+                                                    : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                            )}
                                         >
-                                            <span className="text-base font-semibold w-8">
+                                            <span className="text-xl font-black w-8">
                                                 {c.symbol}
                                             </span>
-                                            <span className="text-sm">
-                                                {c.name}
-                                            </span>
-                                            <span className="text-xs text-slate-400 font-mono ml-auto">
-                                                {c.code}
-                                            </span>
+                                            <div className="flex flex-col leading-none">
+                                                <span className="text-sm font-bold">
+                                                    {c.name}
+                                                </span>
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                                                    {c.code}
+                                                </span>
+                                            </div>
                                         </button>
                                     ))}
                                 </div>
@@ -225,15 +225,14 @@ export default function SettingsPage() {
                         </div>
                     </div>
 
-                    {/* Categories Link */}
                     <div className="pt-2">
-                        <Link href="/categories">
+                        <Link href="/categories" className="block w-full">
                             <Button
                                 variant="ghost"
-                                className="w-full justify-between text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 px-4"
+                                className="w-full justify-between h-12 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 px-5 group"
                             >
-                                <span className="flex items-center gap-2">
-                                    <Tag className="w-4 h-4" />
+                                <span className="flex items-center gap-3 font-bold text-sm tracking-tight">
+                                    <Tag className="w-4 h-4 text-indigo-600 transition-transform group-hover:rotate-12" />
                                     Manage Categories
                                 </span>
                                 <ChevronRight className="w-4 h-4 text-slate-400" />

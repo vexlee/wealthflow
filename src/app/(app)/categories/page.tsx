@@ -24,28 +24,51 @@ const CATEGORY_ICONS = [
 ];
 
 const CategoryGrid = ({ items, label, openEdit }: { items: Category[]; label: string; openEdit: (cat: Category) => void }) => (
-    <div>
-        <div className="flex items-center gap-2 mb-3">
-            <Badge variant="outline" className="text-[10px] uppercase tracking-wider border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400">
+    <div className="space-y-4">
+        <div className="flex items-center gap-3 px-2">
+            <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
                 {label}
-            </Badge>
-            <span className="text-xs text-slate-400">{items.length} categories</span>
+            </h2>
+            <div className="h-px flex-1 bg-slate-100 dark:bg-slate-800" />
+            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                {items.length} items
+            </span>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {items.map((cat) => (
                 <Card
                     key={cat.id}
-                    className="bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all cursor-pointer group"
+                    className={cn(
+                        "group relative bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-[2rem] shadow-sm hover:shadow-2xl transition-all duration-500 cursor-pointer overflow-hidden",
+                        cat.type === "income" ? "hover:border-emerald-500/30" : "hover:border-rose-500/30"
+                    )}
                     onClick={() => openEdit(cat)}
                 >
-                    <CardContent className="p-4 flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-lg shrink-0 group-hover:scale-105 transition-transform">
+                    {/* Vibrant Background Glow */}
+                    <div
+                        className={cn(
+                            "absolute inset-0 opacity-0 group-hover:opacity-[0.08] transition-opacity duration-700 pointer-events-none",
+                            cat.type === "income" ? "bg-gradient-to-br from-emerald-400 to-transparent" : "bg-gradient-to-br from-rose-400 to-transparent"
+                        )}
+                    />
+
+                    <CardContent className="p-6 flex items-center gap-4 relative z-10">
+                        <div
+                            className={cn(
+                                "w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shrink-0 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-sm",
+                                cat.type === "income" ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600" : "bg-rose-50 dark:bg-rose-500/10 text-rose-500"
+                            )}
+                        >
                             {cat.icon || "📦"}
                         </div>
-                        <div className="min-w-0">
-                            <p className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">{cat.name}</p>
+                        <div className="min-w-0 space-y-0.5">
+                            <p className="text-base font-black text-slate-900 dark:text-white tracking-tight truncate transition-colors">
+                                {cat.name}
+                            </p>
                             {cat.is_default && (
-                                <p className="text-[10px] text-slate-400">Default</p>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                                    Default
+                                </p>
                             )}
                         </div>
                     </CardContent>
@@ -178,16 +201,16 @@ export default function CategoriesPage() {
     return (
         <div className="p-4 lg:p-8 space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Categories</h1>
-                    <p className="text-sm text-slate-500 mt-1">Organize your transactions with categories</p>
+                    <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Categories</h1>
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Organize your transactions with categories</p>
                 </div>
                 <Button
                     onClick={openCreate}
-                    className="bg-gradient-to-r from-violet-600 to-violet-700 hover:from-violet-500 hover:to-violet-600 text-white shadow-lg shadow-violet-500/20"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl shadow-indigo-500/20 rounded-2xl px-6 h-12 font-bold transition-all hover:scale-105 active:scale-95"
                 >
-                    <Plus className="w-4 h-4 mr-2" />
+                    <Plus className="w-5 h-5 mr-2" />
                     Add Category
                 </Button>
             </div>

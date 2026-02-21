@@ -25,7 +25,7 @@ export function SummaryCards({ income, expenses }: SummaryCardsProps) {
                 labelDesktop="Total Income"
                 value={formatCurrency(income, currency)}
                 icon={TrendingUp}
-                iconColor="text-emerald-600"
+                theme="emerald"
                 compact
             />
             <StatCard
@@ -33,7 +33,7 @@ export function SummaryCards({ income, expenses }: SummaryCardsProps) {
                 labelDesktop="Total Expenses"
                 value={formatCurrency(expenses, currency)}
                 icon={TrendingDown}
-                iconColor="text-red-500"
+                theme="rose"
                 compact
             />
             <StatCard
@@ -41,7 +41,7 @@ export function SummaryCards({ income, expenses }: SummaryCardsProps) {
                 labelDesktop="Net Balance"
                 value={formatCurrency(net, currency)}
                 icon={ArrowLeftRight}
-                iconColor={net >= 0 ? "text-emerald-600" : "text-red-500"}
+                theme={net >= 0 ? "emerald" : "rose"}
                 compact
             />
         </div>

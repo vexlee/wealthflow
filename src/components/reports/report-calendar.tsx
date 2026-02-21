@@ -70,23 +70,25 @@ export function ReportCalendar({ transactions, month }: ReportCalendarProps) {
 
     if (isMobile) {
         return (
-            <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
-                <div className="p-3 border-b border-slate-200/80 dark:border-slate-800">
-                    <h2 className="text-sm font-medium text-slate-800 dark:text-slate-200">Daily Breakdown</h2>
+            <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-[2rem] shadow-sm overflow-hidden flex flex-col hover:shadow-2xl hover:shadow-slate-200/50 dark:hover:shadow-black/20 transition-all duration-500 relative">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-indigo-50/50 to-transparent dark:from-indigo-900/10 opacity-50 pointer-events-none" />
+
+                <div className="p-5 border-b border-slate-100 dark:border-slate-800 relative z-10">
+                    <h2 className="text-base font-black text-slate-900 dark:text-white tracking-tight">Daily Breakdown</h2>
                 </div>
 
-                <div className="p-3">
+                <div className="p-5 relative z-10">
                     {/* Compact week day header */}
-                    <div className="grid grid-cols-7 mb-1">
+                    <div className="grid grid-cols-7 mb-2">
                         {weekDaysMobile.map((day, i) => (
-                            <div key={`${day}-${i}`} className="text-center text-[11px] font-semibold text-slate-400 dark:text-slate-500 py-1">
+                            <div key={`${day}-${i}`} className="text-center text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
                                 {day}
                             </div>
                         ))}
                     </div>
 
                     {/* Compact calendar grid — tappable cells */}
-                    <div className="grid grid-cols-7 gap-[2px]">
+                    <div className="grid grid-cols-7 gap-1">
                         {days.map((day, idx) => {
                             const { income, expense, hasActivity } = getDayTotals(day);
                             const isCurrentMonth = isSameMonth(day, monthStart);
@@ -103,17 +105,18 @@ export function ReportCalendar({ transactions, month }: ReportCalendarProps) {
                                         }
                                     }}
                                     className={cn(
-                                        "aspect-square flex flex-col items-center justify-center rounded-lg transition-colors relative",
-                                        !isCurrentMonth && "opacity-30",
-                                        isCurrentMonth && "active:scale-95",
-                                        isSelected && "bg-violet-100 dark:bg-violet-500/20 ring-1 ring-violet-400 dark:ring-violet-500",
-                                        isCurrentDay && !isSelected && "bg-violet-50 dark:bg-violet-500/10",
+                                        "aspect-square flex flex-col items-center justify-center rounded-xl transition-all duration-300 relative",
+                                        !isCurrentMonth && "opacity-20",
+                                        isCurrentMonth && "active:scale-90",
+                                        isSelected && "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30 scale-105 z-20",
+                                        isCurrentDay && !isSelected && "bg-indigo-50 dark:bg-indigo-500/10",
+                                        !isSelected && isCurrentMonth && "hover:bg-slate-50 dark:hover:bg-slate-800"
                                     )}
                                 >
                                     <span className={cn(
-                                        "text-xs font-medium leading-none",
-                                        isCurrentDay ? "text-violet-600 dark:text-violet-400 font-bold" : "text-slate-700 dark:text-slate-300",
-                                        !isCurrentMonth && "text-slate-400 dark:text-slate-600"
+                                        "text-xs font-black",
+                                        isCurrentDay && !isSelected ? "text-indigo-600 dark:text-indigo-400" : "",
+                                        !isSelected && !isCurrentDay && "text-slate-600 dark:text-slate-400"
                                     )}>
                                         {format(day, "d")}
                                     </span>
@@ -122,10 +125,16 @@ export function ReportCalendar({ transactions, month }: ReportCalendarProps) {
                                     {hasActivity && isCurrentMonth && (
                                         <div className="flex items-center gap-[3px] mt-1">
                                             {income > 0 && (
-                                                <span className="w-[5px] h-[5px] rounded-full bg-emerald-500" />
+                                                <span className={cn(
+                                                    "w-[4px] h-[4px] rounded-full",
+                                                    isSelected ? "bg-white" : "bg-emerald-500"
+                                                )} />
                                             )}
                                             {expense > 0 && (
-                                                <span className="w-[5px] h-[5px] rounded-full bg-red-400" />
+                                                <span className={cn(
+                                                    "w-[4px] h-[4px] rounded-full",
+                                                    isSelected ? "bg-indigo-200" : "bg-rose-400"
+                                                )} />
                                             )}
                                         </div>
                                     )}
@@ -135,80 +144,80 @@ export function ReportCalendar({ transactions, month }: ReportCalendarProps) {
                     </div>
 
                     {/* Dot legend */}
-                    <div className="flex items-center justify-center gap-4 mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                        <div className="flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                            <span className="text-[10px] text-slate-500">Income</span>
+                    <div className="flex items-center justify-center gap-6 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                        <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-sm" />
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Income</span>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-red-400" />
-                            <span className="text-[10px] text-slate-500">Expense</span>
+                        <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-rose-400 shadow-sm" />
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Expense</span>
                         </div>
                     </div>
                 </div>
 
                 {/* Selected day detail panel */}
                 {selectedDay && selectedDayData && (
-                    <div className="border-t border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
-                        <div className="p-3">
-                            <div className="flex items-center justify-between mb-3">
-                                <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                    <div className="mt-auto border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 animate-in slide-in-from-bottom duration-300">
+                        <div className="p-5">
+                            <div className="flex items-center justify-between mb-4">
+                                <span className="text-sm font-black text-slate-900 dark:text-white tracking-tight">
                                     {format(selectedDay, "EEEE, MMM d")}
                                 </span>
                                 <button
                                     type="button"
                                     onClick={() => setSelectedDay(null)}
-                                    className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400"
+                                    className="p-1.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 transition-colors"
                                 >
                                     <X className="w-4 h-4" />
                                 </button>
                             </div>
 
                             {selectedDayData.hasActivity ? (
-                                <>
+                                <div className="space-y-4">
                                     {/* Day summary */}
-                                    <div className="flex items-center gap-3 mb-3">
+                                    <div className="flex items-center gap-3">
                                         {selectedDayData.income > 0 && (
-                                            <div className="flex-1 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg px-3 py-2 text-center">
-                                                <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium uppercase">Income</p>
-                                                <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300">+{formatCurrency(selectedDayData.income, currency)}</p>
+                                            <div className="flex-1 bg-white dark:bg-slate-900 rounded-2xl p-3 shadow-sm border border-slate-100 dark:border-slate-800">
+                                                <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-1">Income</p>
+                                                <p className="text-sm font-black text-emerald-600 tabular-nums">+{formatCurrency(selectedDayData.income, currency)}</p>
                                             </div>
                                         )}
                                         {selectedDayData.expense > 0 && (
-                                            <div className="flex-1 bg-red-50 dark:bg-red-500/10 rounded-lg px-3 py-2 text-center">
-                                                <p className="text-[10px] text-red-500 dark:text-red-400 font-medium uppercase">Expense</p>
-                                                <p className="text-sm font-bold text-red-600 dark:text-red-300">-{formatCurrency(selectedDayData.expense, currency)}</p>
+                                            <div className="flex-1 bg-white dark:bg-slate-900 rounded-2xl p-3 shadow-sm border border-slate-100 dark:border-slate-800">
+                                                <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest mb-1">Expense</p>
+                                                <p className="text-sm font-black text-rose-500 tabular-nums">-{formatCurrency(selectedDayData.expense, currency)}</p>
                                             </div>
                                         )}
                                     </div>
 
                                     {/* Transaction list */}
-                                    <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                                    <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
                                         {selectedDayData.transactions.map((tx: any, i: number) => (
-                                            <div key={i} className="flex items-center justify-between gap-3 py-1.5 px-2 rounded-lg bg-white dark:bg-slate-900/50">
+                                            <div key={i} className="group flex items-center justify-between gap-4 p-3 rounded-2xl bg-white dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/50 hover:border-indigo-100 dark:hover:border-indigo-500/30 transition-all">
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate">
+                                                    <p className="text-sm font-black text-slate-900 dark:text-white tracking-tight truncate leading-none mb-1">
                                                         {tx.name || tx.categories?.name || "Transaction"}
                                                         {tx.isForecast && (
-                                                            <span className="ml-1 text-[10px] text-amber-500 font-normal">(Forecast)</span>
+                                                            <span className="ml-1.5 text-[10px] font-bold text-amber-500 uppercase">(Forecast)</span>
                                                         )}
                                                     </p>
-                                                    {tx.categories?.name && tx.name && (
-                                                        <p className="text-xs text-slate-400 truncate">{tx.categories.name}</p>
-                                                    )}
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{tx.categories?.name || "Uncategorized"}</p>
                                                 </div>
                                                 <span className={cn(
-                                                    "text-sm font-semibold whitespace-nowrap",
-                                                    tx.type === "income" ? "text-emerald-600" : "text-red-500"
+                                                    "text-sm font-black tabular-nums tracking-tight",
+                                                    tx.type === "income" ? "text-emerald-600" : "text-rose-500"
                                                 )}>
                                                     {tx.type === "income" ? "+" : "-"}{formatCurrency(Number(tx.amount), currency)}
                                                 </span>
                                             </div>
                                         ))}
                                     </div>
-                                </>
+                                </div>
                             ) : (
-                                <p className="text-sm text-slate-400 text-center py-4">No transactions on this day</p>
+                                <div className="text-center py-8">
+                                    <p className="text-sm font-medium text-slate-400">No transactions on this day</p>
+                                </div>
                             )}
                         </div>
                     </div>
@@ -219,23 +228,26 @@ export function ReportCalendar({ transactions, month }: ReportCalendarProps) {
 
     // Desktop: full calendar grid with amounts
     return (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden flex flex-col">
-            <div className="p-4 border-b border-slate-200/80 dark:border-slate-800">
-                <h2 className="text-sm font-medium text-slate-800 dark:text-slate-200">Daily Breakdown</h2>
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-[2rem] shadow-sm overflow-hidden flex flex-col hover:shadow-2xl hover:shadow-slate-200/50 dark:hover:shadow-black/20 transition-all duration-500 relative">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-indigo-50/50 to-transparent dark:from-indigo-900/10 opacity-50 pointer-events-none" />
+
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 relative z-10">
+                <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Daily Breakdown</h2>
+                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Financial calendar overview</p>
             </div>
 
-            <div className="p-4 flex-1">
+            <div className="p-6 flex-1 relative z-10">
                 {/* Calendar Header */}
-                <div className="grid grid-cols-7 mb-2">
+                <div className="grid grid-cols-7 mb-4">
                     {weekDaysDesktop.map(day => (
-                        <div key={day} className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider py-2">
+                        <div key={day} className="text-center text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">
                             {day}
                         </div>
                     ))}
                 </div>
 
                 {/* Calendar Grid */}
-                <div className="grid grid-cols-7 gap-2">
+                <div className="grid grid-cols-7 gap-3">
                     {days.map((day, idx) => {
                         const { income, expense, net, hasActivity } = getDayTotals(day);
                         const isCurrentMonth = isSameMonth(day, monthStart);
@@ -245,51 +257,52 @@ export function ReportCalendar({ transactions, month }: ReportCalendarProps) {
                             <div
                                 key={day.toString() + idx}
                                 className={cn(
-                                    "min-h-[100px] p-2 rounded-lg border flex flex-col transition-colors",
+                                    "min-h-[120px] p-3 rounded-2xl border transition-all duration-300 flex flex-col group/day",
                                     !isCurrentMonth
-                                        ? "bg-slate-50/50 dark:bg-slate-900/30 border-transparent text-slate-400 dark:text-slate-600"
-                                        : "bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300",
-                                    isCurrentDay && "border-violet-200 dark:border-violet-500/30 bg-violet-50/30 dark:bg-violet-500/5",
-                                    hasActivity && isCurrentMonth && "hover:border-slate-300 dark:hover:border-slate-700"
+                                        ? "bg-slate-50/30 dark:bg-slate-900/10 border-transparent text-slate-300 dark:text-slate-700"
+                                        : "bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300 shadow-sm",
+                                    isCurrentDay && "border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/20 dark:bg-indigo-500/5",
+                                    hasActivity && isCurrentMonth && "hover:border-indigo-600 hover:shadow-lg hover:shadow-indigo-500/5 hover:-translate-y-1"
                                 )}
                             >
-                                <div className="flex justify-between items-start mb-1">
+                                <div className="flex justify-between items-start mb-2">
                                     <span className={cn(
-                                        "text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full",
+                                        "text-xs font-black w-7 h-7 flex items-center justify-center rounded-xl transition-all duration-500",
                                         isCurrentDay
-                                            ? "bg-violet-600 text-white"
-                                            : "text-inherit"
+                                            ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30"
+                                            : "bg-slate-50 dark:bg-slate-800 group-hover/day:bg-indigo-50 dark:group-hover/day:bg-indigo-900/30 group-hover/day:text-indigo-600"
                                     )}>
                                         {format(day, "d")}
                                     </span>
                                 </div>
 
                                 {hasActivity && isCurrentMonth && (
-                                    <div className="mt-auto space-y-1 flex flex-col text-xs">
-                                        {income > 0 && expense > 0 ? (
-                                            <>
-                                                <span className="text-emerald-600 font-medium truncate" title={`Income: +${formatCurrency(income, currency)}`}>
-                                                    In: +{formatCurrency(income, currency)}
+                                    <div className="mt-auto space-y-1 flex flex-col">
+                                        {income > 0 && (
+                                            <div className="flex items-center justify-between gap-1 overflow-hidden">
+                                                <div className="w-1 h-1 rounded-full bg-emerald-500 shrink-0" />
+                                                <span className="text-[10px] font-black text-emerald-600 tabular-nums truncate">
+                                                    +{formatCurrency(income, currency)}
                                                 </span>
-                                                <span className="text-red-500 font-medium truncate" title={`Expense: -${formatCurrency(expense, currency)}`}>
-                                                    Out: -{formatCurrency(expense, currency)}
+                                            </div>
+                                        )}
+                                        {expense > 0 && (
+                                            <div className="flex items-center justify-between gap-1 overflow-hidden">
+                                                <div className="w-1 h-1 rounded-full bg-rose-400 shrink-0" />
+                                                <span className="text-[10px] font-black text-rose-500 tabular-nums truncate">
+                                                    -{formatCurrency(expense, currency)}
                                                 </span>
-                                                <div className="w-full h-px bg-slate-100 dark:bg-slate-800 my-0.5" />
-                                                <span className={cn(
-                                                    "font-semibold truncate",
-                                                    net >= 0 ? "text-emerald-600" : "text-red-500"
-                                                )} title={`Net: ${net > 0 ? "+" : ""}${formatCurrency(net, currency)}`}>
+                                            </div>
+                                        )}
+                                        {(income > 0 && expense > 0) && (
+                                            <div className="pt-1 mt-1 border-t border-slate-100 dark:border-slate-800">
+                                                <p className={cn(
+                                                    "text-[10px] font-black tabular-nums text-right truncate",
+                                                    net >= 0 ? "text-emerald-600" : "text-rose-500"
+                                                )}>
                                                     {net > 0 ? "+" : ""}{formatCurrency(net, currency)}
-                                                </span>
-                                            </>
-                                        ) : income > 0 ? (
-                                            <span className="text-emerald-600 font-semibold truncate" title={`Income: +${formatCurrency(income, currency)}`}>
-                                                +{formatCurrency(income, currency)}
-                                            </span>
-                                        ) : (
-                                            <span className="text-red-500 font-semibold truncate" title={`Expense: -${formatCurrency(expense, currency)}`}>
-                                                -{formatCurrency(expense, currency)}
-                                            </span>
+                                                </p>
+                                            </div>
                                         )}
                                     </div>
                                 )}
@@ -303,35 +316,33 @@ export function ReportCalendar({ transactions, month }: ReportCalendarProps) {
                                         <TooltipTrigger asChild>
                                             {dayContent}
                                         </TooltipTrigger>
-                                        <TooltipContent className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3 shadow-xl max-w-[280px] w-full">
-                                            <div className="space-y-3">
-                                                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
-                                                    <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                                                        {format(day, "MMM d, yyyy")}
+                                        <TooltipContent className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-4 rounded-2xl shadow-2xl max-w-[320px] w-full animate-in fade-in zoom-in-95 duration-200">
+                                            <div className="space-y-4">
+                                                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                                                    <span className="text-sm font-black text-slate-900 dark:text-white tracking-tight">
+                                                        {format(day, "MMMM d, yyyy")}
                                                     </span>
                                                     <span className={cn(
-                                                        "text-sm font-semibold",
-                                                        net >= 0 ? "text-emerald-600" : "text-red-500"
+                                                        "text-sm font-black tabular-nums tracking-tight",
+                                                        net >= 0 ? "text-emerald-600" : "text-rose-500"
                                                     )}>
                                                         {net > 0 ? "+" : ""}{formatCurrency(net, currency)}
                                                     </span>
                                                 </div>
-                                                <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
+                                                <div className="space-y-2 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
                                                     {getDayTransactions(day).map((tx: any, i: number) => (
-                                                        <div key={i} className="flex justify-between items-start gap-4 text-sm">
+                                                        <div key={i} className="flex justify-between items-start gap-4 p-2 rounded-xl bg-slate-50/50 dark:bg-slate-800/30">
                                                             <div className="flex-1 min-w-0">
-                                                                <p className="font-medium text-slate-700 dark:text-slate-300 truncate">
+                                                                <p className="text-[11px] font-black text-slate-900 dark:text-white truncate tracking-tight">
                                                                     {tx.name || tx.categories?.name || "Transaction"}
                                                                 </p>
-                                                                {tx.categories?.name && tx.name && (
-                                                                    <p className="text-xs text-slate-500 truncate">
-                                                                        {tx.categories.name}
-                                                                    </p>
-                                                                )}
+                                                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                                                                    {tx.categories?.name || "Uncategorized"}
+                                                                </p>
                                                             </div>
                                                             <span className={cn(
-                                                                "font-medium whitespace-nowrap",
-                                                                tx.type === "income" ? "text-emerald-600" : "text-slate-900 dark:text-slate-100"
+                                                                "text-[11px] font-black tabular-nums tracking-tight",
+                                                                tx.type === "income" ? "text-emerald-600" : "text-slate-900 dark:text-white"
                                                             )}>
                                                                 {tx.type === "income" ? "+" : "-"}{formatCurrency(Number(tx.amount), currency)}
                                                             </span>
@@ -349,6 +360,21 @@ export function ReportCalendar({ transactions, month }: ReportCalendarProps) {
                     })}
                 </div>
             </div>
+            <style jsx global>{`
+                .custom-scrollbar::-webkit-scrollbar {
+                    width: 4px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: oklch(0.88 0.02 80);
+                    border-radius: 10px;
+                }
+                .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: oklch(0.35 0.02 240);
+                }
+            `}</style>
         </div>
     );
 }

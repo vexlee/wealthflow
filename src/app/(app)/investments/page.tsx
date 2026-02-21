@@ -214,33 +214,41 @@ export default function InvestmentsPage() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
-                        <TrendingUp className="w-8 h-8 text-violet-600 dark:text-violet-400" />
+                    <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
+                        <TrendingUp className="w-8 h-8 text-indigo-600" />
                         Investments
                     </h1>
-                    <p className="text-slate-500 dark:text-slate-400 mt-1">
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
                         Track and trade your cryptocurrency portfolio
                     </p>
                 </div>
                 <div className="flex gap-3">
-                    <Button onClick={() => { setTradeType("buy"); setTradeOpen(true); }} className="bg-emerald-600 hover:bg-emerald-700 text-white min-w-28 rounded-xl shadow-lg shadow-emerald-600/20">
-                        <ArrowDownToLine className="w-4 h-4 mr-2" /> Buy
+                    <Button
+                        onClick={() => { setTradeType("buy"); setTradeOpen(true); }}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-500/20 rounded-2xl px-6 h-12 font-bold transition-all hover:scale-105 active:scale-95"
+                    >
+                        <ArrowDownToLine className="w-5 h-5 mr-2" /> Buy
                     </Button>
-                    <Button onClick={() => { setTradeType("sell"); setTradeOpen(true); }} className="bg-rose-600 hover:bg-rose-700 text-white min-w-28 rounded-xl shadow-lg shadow-rose-600/20">
-                        <ArrowUpFromLine className="w-4 h-4 mr-2" /> Sell
+                    <Button
+                        onClick={() => { setTradeType("sell"); setTradeOpen(true); }}
+                        className="bg-rose-600 hover:bg-rose-700 text-white shadow-xl shadow-rose-500/20 rounded-2xl px-6 h-12 font-bold transition-all hover:scale-105 active:scale-95"
+                    >
+                        <ArrowUpFromLine className="w-5 h-5 mr-2" /> Sell
                     </Button>
                 </div>
             </div>
 
             {/* Overview Card */}
-            <Card className="bg-gradient-to-br from-violet-600 to-indigo-700 overflow-hidden relative border-0 shadow-xl shadow-violet-500/20">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 blur-[100px] rounded-full -translate-y-1/2 translate-x-1/3" />
-                <CardContent className="p-6 relative z-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div>
-                        <p className="text-violet-100 font-medium mb-1 flex items-center gap-2">
-                            Total Investment Value
+            <Card className="group bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-800 border-0 rounded-[2.5rem] shadow-2xl shadow-indigo-500/30 overflow-hidden relative">
+                <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 blur-[100px] rounded-full -translate-y-1/2 translate-x-1/3 transition-transform duration-1000 group-hover:scale-110" />
+                <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-400/10 blur-[80px] rounded-full translate-y-1/2 -translate-x-1/4" />
+
+                <CardContent className="p-10 relative z-10">
+                    <div className="space-y-1">
+                        <p className="text-[10px] font-black text-indigo-100 uppercase tracking-[0.25em] opacity-80">
+                            Portfolio Valuation
                         </p>
-                        <h2 className="text-4xl font-extrabold text-white tracking-tight">
+                        <h2 className="text-5xl font-black text-white tracking-tighter leading-none">
                             {maskValue(totalCryptoValue)}
                         </h2>
                     </div>
@@ -255,29 +263,51 @@ export default function InvestmentsPage() {
                         No crypto wallets found. Please create one on the Wallets page to start trading.
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {cryptoWallets.map(wallet => {
                             const price = prices[wallet.currency_code || ""] || 0;
                             const fiatVal = wallet.balance * price;
                             const symbol = SUPPORTED_CRYPTOS.find(c => c.id === wallet.currency_code)?.symbol || wallet.currency_code || "";
+                            const themeColor = wallet.color || "#6366f1";
                             return (
-                                <Card key={wallet.id} className="bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 shadow-sm">
-                                    <div className="p-5 flex items-start gap-4">
-                                        <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shadow-sm" style={{ backgroundColor: `${wallet.color}15`, color: wallet.color || "#7c3aed" }}>
-                                            {wallet.icon}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-semibold text-slate-600 dark:text-slate-400 capitalize">{wallet.name}</p>
-                                            <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1 truncate">
-                                                {isPrivacyMode ? "••••••" : `${wallet.balance} ${symbol}`}
+                                <Card key={wallet.id} className="group relative bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-[2rem] shadow-sm hover:shadow-2xl hover:shadow-slate-200/50 dark:hover:shadow-black/20 hover:-translate-y-1 transition-all duration-500 overflow-hidden">
+                                    {/* Dynamic Background Glow */}
+                                    <div
+                                        className="absolute -top-24 -right-24 w-48 h-48 rounded-full blur-3xl opacity-0 group-hover:opacity-10 transition-opacity duration-700 pointer-events-none"
+                                        style={{ backgroundColor: themeColor }}
+                                    />
+
+                                    <div className="p-7 relative z-10">
+                                        <div className="flex items-start gap-4 mb-6">
+                                            <div
+                                                className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-sm transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3"
+                                                style={{ backgroundColor: `${themeColor}12`, color: themeColor }}
+                                            >
+                                                {wallet.icon}
                                             </div>
-                                            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-                                                1 {symbol.toUpperCase()} = {maskValue(price)}
-                                            </p>
-                                            <p className="text-sm text-slate-500 mt-0.5 mb-3">≈ {maskValue(fiatVal)}</p>
+                                            <div className="min-w-0 flex-1">
+                                                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">
+                                                    {wallet.name}
+                                                </p>
+                                                <div className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter truncate leading-none">
+                                                    {isPrivacyMode ? "••••••" : `${wallet.balance} ${symbol}`}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                                                <span>Live Value</span>
+                                                <span className="text-slate-900 dark:text-white">{maskValue(fiatVal)}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                                                <span>Current Price</span>
+                                                <span className="text-slate-500">1 {symbol} = {maskValue(price)}</span>
+                                            </div>
+
                                             <Button
                                                 variant="outline"
-                                                className="w-full text-xs h-8 border-slate-200 dark:border-slate-700"
+                                                className="w-full h-10 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-bold uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-all mt-2"
                                                 onClick={() => {
                                                     setBalanceWalletId(wallet.id);
                                                     setNewBalanceAmount(wallet.balance.toString());
@@ -298,37 +328,37 @@ export default function InvestmentsPage() {
             {/* Recent Crypto Transactions */}
             <div>
                 <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100 mb-4">Recent Trades</h3>
-                <Card className="bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
+                <Card className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-[2rem] shadow-sm overflow-hidden">
                     {transactions.length === 0 ? (
-                        <div className="p-8 text-center text-slate-500">No recent trades found.</div>
+                        <div className="p-10 text-center text-slate-500 font-medium">No recent trades found.</div>
                     ) : (
                         <div className="divide-y divide-slate-100 dark:divide-slate-800">
                             {transactions.map(tx => (
-                                <div key={tx.id} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                    <div className="flex items-center gap-3">
+                                <div key={tx.id} className="p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group">
+                                    <div className="flex items-center gap-4">
                                         <div className={cn(
-                                            "w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0",
-                                            tx.type === "income" ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20" : "bg-rose-100 text-rose-600 dark:bg-rose-500/20"
+                                            "w-12 h-12 rounded-2xl flex items-center justify-center text-lg shrink-0 transition-transform duration-500 group-hover:scale-110",
+                                            tx.type === "income" ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10" : "bg-rose-50 text-rose-600 dark:bg-rose-500/10"
                                         )}>
                                             {tx.type === "income" ? <ArrowDownToLine className="w-5 h-5" /> : <ArrowUpFromLine className="w-5 h-5" />}
                                         </div>
                                         <div>
-                                            <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate max-w-[200px] sm:max-w-xs cursor-default" title={tx.note || "Trade"}>
+                                            <p className="text-base font-black text-slate-900 dark:text-white tracking-tight leading-none mb-1 cursor-default" title={tx.note || "Trade"}>
                                                 {tx.note || (tx.type === "income" ? "Bought Crypto" : "Sold Crypto")}
                                             </p>
-                                            <p className="text-xs text-slate-500">
-                                                {new Date(tx.date || "").toLocaleDateString()}
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                                {new Date(tx.date || "").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                                             </p>
                                         </div>
                                     </div>
                                     <div className="text-right">
                                         <p className={cn(
-                                            "text-sm font-bold",
+                                            "text-lg font-black tabular-nums tracking-tight",
                                             tx.type === "income" ? "text-emerald-600" : "text-rose-600"
                                         )}>
                                             {tx.type === "income" ? "+" : "-"}{tx.amount}
                                         </p>
-                                        <p className="text-[10px] text-slate-400">Tokens</p>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Tokens</p>
                                     </div>
                                 </div>
                             ))}

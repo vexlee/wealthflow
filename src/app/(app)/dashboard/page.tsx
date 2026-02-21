@@ -96,7 +96,7 @@ export default function DashboardPage() {
                 if (user) {
                     const { data: profile } = await supabase
                         .from('profiles')
-                        .select('dashboard_layout, dashboard_metrics')
+                        .select('dashboard_layout, dashboard_metrics, has_onboarded')
                         .eq('id', user.id)
                         .single();
 
@@ -110,6 +110,9 @@ export default function DashboardPage() {
                             const metrics = profile.dashboard_metrics as unknown as DashboardMetricsConfig;
                             setMetricsConfig(metrics);
                             localStorage.setItem("wealthflow-dashboard-metrics", JSON.stringify(metrics));
+                        }
+                        if (profile.has_onboarded) {
+                            localStorage.setItem("wealthflow-onboarded", "true");
                         }
                     }
                 }
@@ -420,7 +423,7 @@ export default function DashboardPage() {
                                             label="Net Worth"
                                             value={maskValue(netWorth)}
                                             icon={DollarSign}
-                                            iconColor="text-violet-600"
+                                            theme="indigo"
                                         />
                                     )}
                                     {metricsConfig.visibleCards.income && (
@@ -428,7 +431,7 @@ export default function DashboardPage() {
                                             label="Monthly Income"
                                             value={maskValue(monthlyIncome)}
                                             icon={TrendingUp}
-                                            iconColor="text-emerald-600"
+                                            theme="emerald"
                                         />
                                     )}
                                     {metricsConfig.visibleCards.expenses && (
@@ -436,7 +439,7 @@ export default function DashboardPage() {
                                             label="Monthly Expenses"
                                             value={maskValue(monthlyExpenses)}
                                             icon={TrendingDown}
-                                            iconColor="text-red-500"
+                                            theme="rose"
                                         />
                                     )}
                                     {metricsConfig.visibleCards.balance && (
@@ -444,7 +447,7 @@ export default function DashboardPage() {
                                             label="Monthly Balance"
                                             value={maskValue(monthlyIncome - monthlyExpenses)}
                                             icon={ArrowLeftRight}
-                                            iconColor={monthlyIncome - monthlyExpenses >= 0 ? "text-emerald-600" : "text-red-500"}
+                                            theme={monthlyIncome - monthlyExpenses >= 0 ? "emerald" : "rose"}
                                         />
                                     )}
                                     {metricsConfig.visibleCards.dailyBudget && (
@@ -452,7 +455,7 @@ export default function DashboardPage() {
                                             label="Daily Budget"
                                             value={dailySuggested > 0 ? maskValue(dailySuggested) : "—"}
                                             icon={PiggyBank}
-                                            iconColor="text-amber-500"
+                                            theme="amber"
                                         />
                                     )}
                                 </div>
@@ -461,65 +464,53 @@ export default function DashboardPage() {
                         case "spending-distribution":
                             return (
                                 <div key={section.id} style={sectionStyle} className={spanClass}>
-                                    <Card className="bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 shadow-sm h-full flex flex-col">
-                                        <CardHeader className="pb-2">
-                                            <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400">Spending by Category</CardTitle>
+                                    <Card className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-sm h-full flex flex-col">
+                                        <CardHeader className="pb-0">
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <CardTitle className="text-sm font-bold text-slate-900 dark:text-white">Spending Analytics</CardTitle>
+                                                    <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">By Category</p>
+                                                </div>
+                                            </div>
                                         </CardHeader>
-                                        <CardContent>
-                                            <div className={`h-72 ${isPrivacyMode ? "blur-sm opacity-50" : ""}`}>
+                                        <CardContent className="pt-4">
+                                            <div className={`${isPrivacyMode ? "blur-sm opacity-50" : ""}`}>
                                                 {spendingByCategory.length > 0 ? (
-                                                    <div className="h-full flex flex-col">
-                                                        <div className="flex-1 min-h-0">
-                                                            <ResponsivePie
-                                                                data={spendingByCategory}
-                                                                margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-                                                                innerRadius={0.6}
-                                                                padAngle={2}
-                                                                cornerRadius={4}
-                                                                colors={{ datum: "data.color" }}
-                                                                borderWidth={0}
-                                                                enableArcLabels={false}
-                                                                enableArcLinkLabels={!isMobile}
-                                                                arcLinkLabelsTextColor="#475569"
-                                                                arcLinkLabelsColor={{ from: "color" }}
-                                                                arcLinkLabelsThickness={2}
-                                                                arcLinkLabelsDiagonalLength={12}
-                                                                arcLinkLabelsStraightLength={8}
-                                                                theme={{
-                                                                    text: { fill: "#475569" },
-                                                                    tooltip: {
-                                                                        container: {
-                                                                            background: "#ffffff",
-                                                                            color: "#1e293b",
-                                                                            borderRadius: "8px",
-                                                                            border: "1px solid #e2e8f0",
-                                                                            boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                                                                        },
-                                                                    },
-                                                                }}
-                                                            />
-                                                        </div>
-                                                        {isMobile && (
-                                                            <div className="mt-4 grid grid-cols-2 gap-2 max-h-24 overflow-y-auto pr-1">
-                                                                {spendingByCategory.map((category) => (
-                                                                    <div key={category.id} className="flex items-center gap-2">
-                                                                        <div
-                                                                            className="w-3 h-3 rounded-full shrink-0"
-                                                                            style={{ backgroundColor: category.color }}
-                                                                        />
-                                                                        <span className="text-xs text-slate-600 dark:text-slate-400 truncate flex-1">
-                                                                            {category.label}
-                                                                        </span>
-                                                                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                                                                            {maskValue(category.value)}
+                                                    <div className="space-y-4">
+                                                        {spendingByCategory.map((category) => {
+                                                            const percentage = monthlyExpenses > 0 ? (category.value / monthlyExpenses) * 100 : 0;
+                                                            return (
+                                                                <div key={category.id} className="group">
+                                                                    <div className="flex items-center justify-between mb-1.5">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <div
+                                                                                className="w-2 h-2 rounded-full"
+                                                                                style={{ backgroundColor: category.color }}
+                                                                            />
+                                                                            <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-tight">
+                                                                                {category.label}
+                                                                            </span>
+                                                                        </div>
+                                                                        <span className="text-[11px] font-black text-slate-900 dark:text-white">
+                                                                            {percentage.toFixed(1)}%
                                                                         </span>
                                                                     </div>
-                                                                ))}
-                                                            </div>
-                                                        )}
+                                                                    <div className="h-2.5 w-full bg-slate-50 dark:bg-slate-800/50 rounded-full overflow-hidden">
+                                                                        <div
+                                                                            className="h-full rounded-full transition-all duration-1000 group-hover:opacity-80"
+                                                                            style={{
+                                                                                width: `${percentage}%`,
+                                                                                backgroundColor: category.color,
+                                                                                boxShadow: `0 0 10px ${category.color}30`
+                                                                            }}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
                                                     </div>
                                                 ) : (
-                                                    <div className="h-full flex items-center justify-center text-slate-400 text-sm">
+                                                    <div className="h-72 flex items-center justify-center text-slate-400 text-sm">
                                                         No expenses this month yet
                                                     </div>
                                                 )}
@@ -532,62 +523,63 @@ export default function DashboardPage() {
                         case "cash-flow":
                             return (
                                 <div key={section.id} style={sectionStyle} className={spanClass}>
-                                    <Card className="bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 shadow-sm h-full flex flex-col">
-                                        <CardHeader className="pb-2">
-                                            <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400">Cash Flow (Last 30 Days)</CardTitle>
+                                    <Card className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-sm h-full flex flex-col">
+                                        <CardHeader className="pb-0">
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <CardTitle className="text-sm font-bold text-slate-900 dark:text-white">Cash Flow</CardTitle>
+                                                    <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Last 30 Days</p>
+                                                </div>
+                                            </div>
                                         </CardHeader>
-                                        <CardContent>
+                                        <CardContent className="pt-4">
                                             <div className={`h-72 ${isPrivacyMode ? "blur-sm opacity-50" : ""}`}>
                                                 {cashFlowData.length > 0 ? (
                                                     <ResponsiveLine
                                                         data={cashFlowData}
-                                                        margin={{ top: 20, right: 20, bottom: 40, left: 50 }}
+                                                        margin={{ top: 10, right: 10, bottom: 40, left: 45 }}
                                                         xScale={{ type: "point" }}
                                                         yScale={{ type: "linear", min: 0, max: "auto" }}
                                                         curve="monotoneX"
-                                                        colors={["#10b981", "#ef4444"]}
-                                                        lineWidth={2}
+                                                        colors={["oklch(0.65 0.15 160)", "oklch(0.6 0.18 30)"]}
+                                                        lineWidth={3}
                                                         pointSize={0}
                                                         enableGridX={false}
-                                                        gridYValues={5}
+                                                        gridYValues={4}
                                                         axisLeft={{
                                                             tickSize: 0,
-                                                            tickPadding: 8,
-                                                            format: (v) => `$${v}`,
+                                                            tickPadding: 10,
+                                                            format: (v) => formatCurrency(v as number, currency),
                                                         }}
                                                         axisBottom={{
                                                             tickSize: 0,
-                                                            tickPadding: 8,
-                                                            tickRotation: -45,
-                                                            tickValues: "every 5 days" as unknown as undefined,
+                                                            tickPadding: 12,
+                                                            tickRotation: 0,
+                                                            tickValues: "every 10 days" as unknown as undefined,
                                                         }}
                                                         enableArea={true}
-                                                        areaOpacity={0.08}
+                                                        areaOpacity={0.1}
                                                         theme={{
-                                                            text: { fill: "#64748b" },
-                                                            grid: { line: { stroke: "#e2e8f0" } },
-                                                            axis: { ticks: { text: { fill: "#64748b", fontSize: 10 } } },
+                                                            text: { fill: "oklch(0.55 0.02 80)", fontSize: 10, fontWeight: 500 },
+                                                            grid: { line: { stroke: "oklch(0.92 0.02 80)", strokeWidth: 1 } },
+                                                            axis: {
+                                                                domain: { line: { stroke: "transparent" } },
+                                                                ticks: { text: { fill: "oklch(0.55 0.02 80)" } }
+                                                            },
                                                             tooltip: {
                                                                 container: {
-                                                                    background: "#ffffff",
-                                                                    color: "#1e293b",
-                                                                    borderRadius: "8px",
-                                                                    border: "1px solid #e2e8f0",
-                                                                    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                                                                    background: "oklch(0.99 0.005 80)",
+                                                                    color: "oklch(0.25 0.02 80)",
+                                                                    borderRadius: "12px",
+                                                                    border: "1px solid oklch(0.88 0.02 80)",
+                                                                    boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)",
+                                                                    padding: "10px",
+                                                                    fontSize: "11px",
+                                                                    fontWeight: 600
                                                                 },
                                                             },
                                                         }}
-                                                        legends={[
-                                                            {
-                                                                anchor: "top-right",
-                                                                direction: "row",
-                                                                itemWidth: 80,
-                                                                itemHeight: 20,
-                                                                itemTextColor: "#64748b",
-                                                                symbolSize: 10,
-                                                                symbolShape: "circle",
-                                                            },
-                                                        ]}
+                                                        enableSlices="x"
                                                     />
                                                 ) : (
                                                     <div className="h-full flex items-center justify-center text-slate-400 text-sm">
@@ -603,20 +595,23 @@ export default function DashboardPage() {
                         case "recent-transactions":
                             return (
                                 <div key={section.id} style={sectionStyle} className={spanClass}>
-                                    <Card className="bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 shadow-sm h-full flex flex-col">
-                                        <CardHeader className="pb-3">
+                                    <Card className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-sm h-full flex flex-col">
+                                        <CardHeader className="pb-4">
                                             <div className="flex items-center justify-between">
-                                                <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400">Recent Transactions</CardTitle>
+                                                <div>
+                                                    <CardTitle className="text-sm font-bold text-slate-900 dark:text-white">Recent Transactions</CardTitle>
+                                                    <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Latest updates</p>
+                                                </div>
                                                 <Link
                                                     href="/transactions"
-                                                    className="text-xs font-medium text-violet-600 hover:text-violet-700 flex items-center gap-1 transition-colors"
+                                                    className="text-[11px] font-bold text-violet-600 hover:text-violet-700 flex items-center gap-1 transition-all hover:gap-1.5"
                                                 >
                                                     View All
                                                     <ArrowRight className="w-3 h-3" />
                                                 </Link>
                                             </div>
                                         </CardHeader>
-                                        <CardContent className="space-y-1">
+                                        <CardContent className="space-y-1.5">
                                             {recentTransactions.length > 0 ? (
                                                 recentTransactions.map((tx) => (
                                                     <div key={tx.id} className="flex items-center gap-3 p-2.5 rounded-lg active:bg-slate-100 dark:active:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer sm:cursor-default">
@@ -645,17 +640,20 @@ export default function DashboardPage() {
                         case "budget-overview":
                             return (
                                 <div key={section.id} style={sectionStyle} className={spanClass}>
-                                    <Card className="bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 shadow-sm h-full flex flex-col">
-                                        <CardHeader className="pb-3">
+                                    <Card className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-sm h-full flex flex-col">
+                                        <CardHeader className="pb-4">
                                             <div className="flex items-center justify-between">
-                                                <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400">Budget Overview</CardTitle>
+                                                <div>
+                                                    <CardTitle className="text-sm font-bold text-slate-900 dark:text-white">Budget Status</CardTitle>
+                                                    <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Performance tracking</p>
+                                                </div>
                                                 <div className="flex items-center gap-3">
-                                                    <Badge variant="outline" className="text-[10px] border-slate-300 text-slate-500">
+                                                    <Badge variant="outline" className="text-[9px] font-bold border-slate-200 rounded-full py-0 px-2 text-slate-400 uppercase tracking-wider">
                                                         {daysLeft} days left
                                                     </Badge>
                                                     <Link
                                                         href="/budgets"
-                                                        className="text-xs font-medium text-violet-600 hover:text-violet-700 flex items-center gap-1 transition-colors"
+                                                        className="text-[11px] font-bold text-violet-600 hover:text-violet-700 flex items-center gap-1 transition-all hover:gap-1.5"
                                                     >
                                                         View All
                                                         <ArrowRight className="w-3 h-3" />
@@ -663,7 +661,7 @@ export default function DashboardPage() {
                                                 </div>
                                             </div>
                                         </CardHeader>
-                                        <CardContent className="space-y-4">
+                                        <CardContent className="space-y-5">
                                             {budgets.length > 0 ? (
                                                 budgets.map((b) => {
                                                     const spentAmount = b.spent || 0;
@@ -714,26 +712,34 @@ export default function DashboardPage() {
                                     </div>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 flex-1">
                                         {wallets.map((wallet) => (
-                                            <Card key={wallet.id} className="bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden group hover:shadow-md transition-all">
-                                                <CardContent className="p-5 relative">
+                                            <Card key={wallet.id} className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-[2rem] shadow-sm overflow-hidden group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative">
+                                                <CardContent className="p-6">
+                                                    {/* Background Glow */}
                                                     <div
-                                                        className="absolute inset-0 opacity-[0.04] group-hover:opacity-[0.08] transition-opacity"
-                                                        style={{ background: `linear-gradient(135deg, ${wallet.color || "#7c3aed"}, transparent)` }}
+                                                        className="absolute inset-0 opacity-[0.05] group-hover:opacity-[0.1] transition-opacity duration-700"
+                                                        style={{ background: `linear-gradient(135deg, ${wallet.color || "#7c3aed"}, transparent 60%)` }}
                                                     />
-                                                    <div className="relative flex items-center gap-3">
+
+                                                    {/* Side border glow */}
+                                                    <div
+                                                        className="absolute left-0 top-0 bottom-0 w-1 opacity-20"
+                                                        style={{ backgroundColor: wallet.color || "#7c3aed" }}
+                                                    />
+
+                                                    <div className="relative flex items-center gap-4">
                                                         <div
-                                                            className="w-10 h-10 rounded-xl flex items-center justify-center text-lg"
-                                                            style={{ backgroundColor: `${wallet.color || "#7c3aed"}15` }}
+                                                            className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-inner transition-transform group-hover:scale-110 group-hover:rotate-3 duration-500"
+                                                            style={{ backgroundColor: `${wallet.color || "#7c3aed"}20` }}
                                                         >
                                                             {wallet.icon || "💵"}
                                                         </div>
-                                                        <div>
-                                                            <p className="text-sm text-slate-500 dark:text-slate-400">{wallet.name}</p>
-                                                            <div className={`text-lg font-bold ${wallet.balance >= 0 ? "text-slate-900 dark:text-slate-100" : "text-red-500"}`}>
+                                                        <div className="min-w-0 flex-1">
+                                                            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none mb-1.5">{wallet.name}</p>
+                                                            <div className={`text-xl font-black tracking-tight leading-none ${wallet.balance >= 0 ? "text-slate-900 dark:text-white" : "text-rose-500"}`}>
                                                                 {wallet.type === "crypto" ? (
-                                                                    <div className="flex flex-col mt-0.5">
-                                                                        <span className="text-base leading-none">{wallet.balance} {SUPPORTED_CRYPTOS.find(c => c.id === wallet.currency_code)?.symbol || wallet.currency_code}</span>
-                                                                        <span className="text-[11px] font-medium text-slate-400 mt-1">≈ {formatCurrency(wallet.balance * (prices[wallet.currency_code || ""] || 0), currency)}</span>
+                                                                    <div className="flex flex-col gap-1">
+                                                                        <span className="text-lg">{wallet.balance} {SUPPORTED_CRYPTOS.find(c => c.id === wallet.currency_code)?.symbol || wallet.currency_code}</span>
+                                                                        <span className="text-[10px] font-bold text-slate-400">≈ {formatCurrency(wallet.balance * (prices[wallet.currency_code || ""] || 0), currency)}</span>
                                                                     </div>
                                                                 ) : maskValue(wallet.balance)}
                                                             </div>

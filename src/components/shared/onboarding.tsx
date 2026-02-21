@@ -99,8 +99,18 @@ export function Onboarding({ onComplete }: OnboardingProps) {
         setStep(2);
     };
 
-    const handleFinish = () => {
-        localStorage.setItem("wealthflow-onboarded", "true");
+    const handleFinish = async () => {
+        const {
+            data: { user },
+        } = await supabase.auth.getUser();
+
+        if (user) {
+            await supabase
+                .from("profiles")
+                .upsert({ id: user.id, has_onboarded: true });
+        }
+
+        localStorage.setItem("wealthflow-onboarded", "true"); // keep as fallback
         onComplete();
     };
 
@@ -115,11 +125,10 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                     {STEPS.map((_, i) => (
                         <div
                             key={i}
-                            className={`h-1 flex-1 rounded-full transition-all duration-300 ${
-                                i <= step
+                            className={`h-1 flex-1 rounded-full transition-all duration-300 ${i <= step
                                     ? "bg-violet-500"
                                     : "bg-slate-200 dark:bg-slate-700"
-                            }`}
+                                }`}
                         />
                     ))}
                 </div>
@@ -199,11 +208,10 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                                         <button
                                             key={ic}
                                             onClick={() => setWalletIcon(ic)}
-                                            className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-all ${
-                                                walletIcon === ic
+                                            className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-all ${walletIcon === ic
                                                     ? "bg-violet-100 dark:bg-violet-500/20 ring-2 ring-violet-500 scale-110"
                                                     : "bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700"
-                                            }`}
+                                                }`}
                                         >
                                             {ic}
                                         </button>
@@ -220,11 +228,10 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                                         <button
                                             key={c}
                                             onClick={() => setWalletColor(c)}
-                                            className={`w-8 h-8 rounded-full transition-all ${
-                                                walletColor === c
+                                            className={`w-8 h-8 rounded-full transition-all ${walletColor === c
                                                     ? "ring-2 ring-slate-900 dark:ring-slate-100 scale-110"
                                                     : "hover:scale-105"
-                                            }`}
+                                                }`}
                                             style={{ backgroundColor: c }}
                                         />
                                     ))}

@@ -5,7 +5,7 @@ import { useCurrency } from "@/contexts/currency-context";
 import { useCryptoPrices } from "@/hooks/use-crypto-prices";
 import { SUPPORTED_CRYPTOS } from "@/lib/crypto";
 import { createClient } from "@/lib/supabase/client";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, cn } from "@/lib/utils";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ResponsiveModal } from "@/components/shared/responsive-modal";
 import { Button } from "@/components/ui/button";
@@ -241,18 +241,18 @@ export default function WalletsPage() {
     return (
         <div className="p-4 lg:p-8 space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Wallets</h1>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                        Total Balance: <span className="text-slate-900 dark:text-slate-100 font-semibold">{formatCurrency(totalBalance, currency)}</span>
+                    <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Wallets</h1>
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
+                        Total Balance: <span className="text-slate-900 dark:text-white font-bold">{formatCurrency(totalBalance, currency)}</span>
                     </p>
                 </div>
                 <Button
                     onClick={openCreate}
-                    className="bg-gradient-to-r from-violet-600 to-violet-700 hover:from-violet-500 hover:to-violet-600 text-white shadow-lg shadow-violet-500/20"
+                    className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 rounded-2xl px-6 h-12 font-bold shadow-lg shadow-slate-200 dark:shadow-none transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
                 >
-                    <Plus className="w-4 h-4 mr-2" />
+                    <Plus className="w-5 h-5 mr-2" />
                     Add Wallet
                 </Button>
             </div>
@@ -263,53 +263,95 @@ export default function WalletsPage() {
                     {wallets.map((wallet) => (
                         <Card
                             key={wallet.id}
-                            className="bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden group hover:shadow-md transition-all duration-300 cursor-pointer"
+                            className="group relative bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-[2rem] shadow-sm hover:shadow-2xl transition-all duration-500 cursor-pointer overflow-hidden"
                             onClick={() => openEdit(wallet)}
                         >
-                            <CardContent className="p-6 relative">
-                                <div
-                                    className="absolute inset-0 opacity-[0.04] group-hover:opacity-[0.08] transition-opacity"
-                                    style={{ background: `linear-gradient(135deg, ${wallet.color || "#7c3aed"}, transparent)` }}
-                                />
-                                <div className="relative">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <div
-                                            className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-sm"
-                                            style={{ backgroundColor: `${wallet.color || "#7c3aed"}12`, boxShadow: `0 2px 8px ${wallet.color || "#7c3aed"}08` }}
+                            {/* Dynamic Background Glow */}
+                            <div
+                                className="absolute inset-0 opacity-[0.05] group-hover:opacity-[0.12] transition-opacity duration-700 pointer-events-none"
+                                style={{ background: `linear-gradient(135deg, ${wallet.color || "#7c3aed"}20, transparent 70%)` }}
+                            />
+
+                            {/* Side Accent Glow */}
+                            <div
+                                className="absolute left-0 top-0 bottom-0 w-1.5 opacity-30 group-hover:opacity-60 transition-opacity duration-500"
+                                style={{ backgroundColor: wallet.color || "#7c3aed" }}
+                            />
+
+                            <CardContent className="p-7 relative z-10">
+                                <div className="flex items-start justify-between mb-6">
+                                    <div
+                                        className="w-16 h-16 rounded-[2rem] flex items-center justify-center text-3xl shadow-sm transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3"
+                                        style={{
+                                            backgroundColor: `${wallet.color || "#7c3aed"}15`,
+                                            color: wallet.color || "#7c3aed"
+                                        }}
+                                    >
+                                        {wallet.icon || "💵"}
+                                    </div>
+                                    <div className="flex flex-col items-end">
+                                        <span
+                                            className="text-[10px] uppercase tracking-[0.2em] font-black px-3 py-1.5 rounded-full border shadow-sm transition-colors duration-500"
+                                            style={{
+                                                backgroundColor: `${wallet.color || "#7c3aed"}10`,
+                                                borderColor: `${wallet.color || "#7c3aed"}30`,
+                                                color: wallet.color || "#7c3aed"
+                                            }}
                                         >
-                                            {wallet.icon || "💵"}
-                                        </div>
-                                        <span className="text-[10px] uppercase tracking-wider text-slate-400 font-medium px-2 py-1 rounded-md bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
                                             {wallet.type || "manual"}
                                         </span>
                                     </div>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">{wallet.name}</p>
-                                    <div className="flex items-end justify-between gap-3">
-                                        <div className={`text-2xl font-bold tracking-tight ${wallet.balance >= 0 ? "text-slate-900 dark:text-slate-100" : "text-red-500"}`}>
-                                            {wallet.type === "crypto" ? (
-                                                <div className="flex flex-col">
-                                                    <span>{wallet.balance} {SUPPORTED_CRYPTOS.find(c => c.id === wallet.currency_code)?.symbol || wallet.currency_code}</span>
-                                                    <span className="text-sm font-normal text-slate-500">≈ {formatCurrency(wallet.balance * (prices[wallet.currency_code || ""] || 0), currency)}</span>
+                                </div>
+
+                                <div className="space-y-1 mb-6">
+                                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pl-1">{wallet.name}</p>
+                                    <div className={`text-3xl font-black tracking-tighter leading-none ${wallet.balance >= 0 ? "text-slate-900 dark:text-white" : "text-rose-500"}`}>
+                                        {wallet.type === "crypto" ? (
+                                            <div className="flex flex-col gap-1.5">
+                                                <div className="flex items-baseline gap-2">
+                                                    <span>{wallet.balance}</span>
+                                                    <span className="text-sm font-black text-slate-400 uppercase">{SUPPORTED_CRYPTOS.find(c => c.id === wallet.currency_code)?.symbol || wallet.currency_code}</span>
                                                 </div>
-                                            ) : (
-                                                formatCurrency(wallet.balance, wallet.currency_code || "USD")
-                                            )}
-                                        </div>
-                                        {wallet.sparkline.length >= 2 && (
-                                            <MiniSparkline data={wallet.sparkline} color={wallet.color || "#7c3aed"} />
+                                                <span className="text-[11px] font-black text-slate-500/80 bg-slate-50 dark:bg-slate-800/50 w-fit px-2.5 py-1 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                                    ≈ {formatCurrency(wallet.balance * (prices[wallet.currency_code || ""] || 0), currency)}
+                                                </span>
+                                            </div>
+                                        ) : (
+                                            formatCurrency(wallet.balance, wallet.currency_code || "USD")
                                         )}
                                     </div>
-                                    {wallet.lastTx && (
-                                        <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 text-[11px] text-slate-400">
-                                            {wallet.lastTx.type === "income" ? (
-                                                <ArrowDownLeft className="w-3 h-3 text-emerald-500" />
-                                            ) : (
-                                                <ArrowUpRight className="w-3 h-3 text-red-400" />
-                                            )}
-                                            <span className="truncate">
-                                                {wallet.lastTx.merchant_name || "Transaction"} · {formatCurrency(Number(wallet.lastTx.amount), currency)}
-                                            </span>
-                                            <span className="ml-auto shrink-0">{wallet.lastTx.date ? formatDateShort(wallet.lastTx.date) : ""}</span>
+                                </div>
+
+                                <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/50">
+                                    <div className="flex-1 min-w-0">
+                                        {wallet.lastTx && (
+                                            <div className="flex items-center gap-3">
+                                                <div className={cn(
+                                                    "p-1.5 rounded-xl transition-colors duration-500",
+                                                    wallet.lastTx.type === "income"
+                                                        ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 group-hover:bg-emerald-100/50"
+                                                        : "bg-rose-50 text-rose-500 dark:bg-rose-500/10 group-hover:bg-rose-100/50"
+                                                )}>
+                                                    {wallet.lastTx.type === "income" ? (
+                                                        <ArrowDownLeft className="w-3.5 h-3.5" />
+                                                    ) : (
+                                                        <ArrowUpRight className="w-3.5 h-3.5" />
+                                                    )}
+                                                </div>
+                                                <div className="flex flex-col min-w-0">
+                                                    <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                                                        Recent · {wallet.lastTx.date ? formatDateShort(wallet.lastTx.date) : ""}
+                                                    </span>
+                                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">
+                                                        {wallet.lastTx.merchant_name || "Transaction"}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    {wallet.sparkline.length >= 2 && (
+                                        <div className="pl-4">
+                                            <MiniSparkline data={wallet.sparkline} color={wallet.color || "#7c3aed"} />
                                         </div>
                                     )}
                                 </div>

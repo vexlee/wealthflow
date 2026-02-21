@@ -46,6 +46,7 @@ function TransactionsContent() {
     const [filterType, setFilterType] = useState<string>("all");
     const [filterWallet, setFilterWallet] = useState<string>("all");
     const [searchQuery, setSearchQuery] = useState("");
+    const [filtersLoaded, setFiltersLoaded] = useState(false);
 
     // Form state
     const [editId, setEditId] = useState<string | null>(null);
@@ -142,10 +143,45 @@ function TransactionsContent() {
             setHasMore(txArr.length === PAGE_SIZE);
             setWallets(walletData || []);
             setCategories(catData || []);
+
+            // 1. Fetch filters from Supabase profiles on load
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data: profile } = await supabase
+                    .from("profiles")
+                    .select("transaction_filters")
+                    .eq("id", user.id)
+                    .single();
+
+                if (profile && profile.transaction_filters) {
+                    const filters = profile.transaction_filters as any;
+                    if (filters.filterType) setFilterType(filters.filterType);
+                    if (filters.filterWallet) setFilterWallet(filters.filterWallet);
+                }
+            }
+
+            setFiltersLoaded(true);
             setLoading(false);
         };
         init();
     }, [supabase]);
+
+    // 2. Persist filters back to Supabase when they change using debouncing
+    useEffect(() => {
+        if (!filtersLoaded) return; // Don't persist initial load
+
+        const timer = setTimeout(async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const currentFilters = { filterType, filterWallet };
+                await supabase
+                    .from("profiles")
+                    .upsert({ id: user.id, transaction_filters: currentFilters as any });
+            }
+        }, 1000); // 1 second debounce
+
+        return () => clearTimeout(timer);
+    }, [filterType, filterWallet, filtersLoaded, supabase]);
 
     // Auto-open dialog from FAB (?new=true)
     useEffect(() => {
@@ -424,17 +460,17 @@ function TransactionsContent() {
     return (
         <div className="p-4 lg:p-8 space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Transactions</h1>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{filtered.length} transactions</p>
+                    <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Transactions</h1>
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">{filtered.length} transactions total</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
                     {wallets.length >= 2 && (
                         <Button
                             onClick={openTransfer}
                             variant="outline"
-                            className="border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                            className="h-11 rounded-xl border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 font-bold transition-all duration-300 px-5"
                         >
                             <Repeat className="w-4 h-4 mr-2" />
                             Transfer
@@ -442,32 +478,32 @@ function TransactionsContent() {
                     )}
                     <Button
                         onClick={openCreate}
-                        className="bg-gradient-to-r from-violet-600 to-violet-700 hover:from-violet-500 hover:to-violet-600 text-white shadow-lg shadow-violet-500/20"
+                        className="h-11 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 font-bold shadow-lg shadow-slate-200 dark:shadow-none transition-all duration-300 hover:scale-[1.02] px-5"
                     >
                         <Plus className="w-4 h-4 mr-2" />
-                        Add Transaction
+                        Add New
                     </Button>
                 </div>
             </div>
 
             {/* Filters */}
-            <div className="flex flex-col sm:flex-row gap-3">
-                <div className="relative w-full sm:flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <div className="flex flex-col md:flex-row gap-3">
+                <div className="relative flex-1 group">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-slate-900 dark:group-focus-within:text-white transition-colors" />
                     <Input
                         ref={searchInputRef}
-                        placeholder="Search transactions..."
+                        placeholder="Search by merchant, note, or category..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-9 w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 shadow-sm"
+                        className="pl-11 h-12 w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-white placeholder:text-slate-400 shadow-sm focus:ring-2 focus:ring-slate-900 dark:focus:ring-white transition-all"
                     />
                 </div>
-                <div className="flex items-center gap-3 w-full sm:w-auto">
+                <div className="flex items-center gap-2">
                     <Select value={filterType} onValueChange={setFilterType}>
-                        <SelectTrigger className="flex-1 sm:w-[130px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 shadow-sm">
-                            <SelectValue placeholder="Type" />
+                        <SelectTrigger className="h-12 min-w-[140px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-white font-bold shadow-sm">
+                            <SelectValue placeholder="All Types" />
                         </SelectTrigger>
-                        <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+                        <SelectContent className="rounded-2xl border-slate-200 dark:border-slate-800">
                             <SelectItem value="all">All Types</SelectItem>
                             <SelectItem value="income">Income</SelectItem>
                             <SelectItem value="expense">Expense</SelectItem>
@@ -475,10 +511,10 @@ function TransactionsContent() {
                         </SelectContent>
                     </Select>
                     <Select value={filterWallet} onValueChange={setFilterWallet}>
-                        <SelectTrigger className="flex-1 sm:w-[150px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 shadow-sm">
-                            <SelectValue placeholder="Wallet" />
+                        <SelectTrigger className="h-12 min-w-[160px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-white font-bold shadow-sm">
+                            <SelectValue placeholder="All Wallets" />
                         </SelectTrigger>
-                        <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+                        <SelectContent className="rounded-2xl border-slate-200 dark:border-slate-800">
                             <SelectItem value="all">All Wallets</SelectItem>
                             {wallets.map((w) => (
                                 <SelectItem key={w.id} value={w.id}>{w.icon} {w.name}</SelectItem>
@@ -492,51 +528,64 @@ function TransactionsContent() {
             {Object.keys(grouped).length > 0 ? (
                 <div className="space-y-6">
                     {Object.entries(grouped).map(([dateKey, txs]) => (
-                        <div key={dateKey}>
-                            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-1">
-                                {formatDate(dateKey)}
-                            </p>
-                            <Card className="bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
-                                <CardContent className="p-0 divide-y divide-slate-100 dark:divide-slate-800">
+                        <div key={dateKey} className="group/date space-y-3">
+                            <div className="flex items-center gap-3 px-1">
+                                <div className="h-px flex-1 bg-slate-100 dark:bg-slate-800/50" />
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                                    {formatDate(dateKey)}
+                                </p>
+                                <div className="h-px flex-1 bg-slate-100 dark:bg-slate-800/50" />
+                            </div>
+                            <Card className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-[2rem] shadow-sm hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-black/20 transition-all duration-500 overflow-hidden">
+                                <CardContent className="p-0 divide-y divide-slate-50 dark:divide-slate-800/50">
                                     {txs.map((tx) => (
                                         <div
                                             key={tx.id}
                                             onClick={() => openEdit(tx)}
-                                            className="flex items-center gap-3 p-4 hover:bg-slate-50 dark:hover:bg-slate-800 active:bg-slate-100 dark:active:bg-slate-800/80 transition-colors cursor-pointer sm:cursor-default"
+                                            className="flex items-center gap-4 p-5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-all duration-300 cursor-pointer active:scale-[0.995]"
                                         >
                                             <div className={cn(
-                                                "w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0",
-                                                tx.note?.startsWith("transfer:") ? "bg-blue-50 dark:bg-blue-500/10" : "bg-slate-100 dark:bg-slate-800"
+                                                "w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 transition-transform duration-500 group-hover:scale-110 shadow-sm",
+                                                tx.note?.startsWith("transfer:") ? "bg-blue-50 text-blue-600 dark:bg-blue-500/10" : "bg-slate-50 text-slate-600 dark:bg-slate-800/50 dark:text-slate-400"
                                             )}>
-                                                {tx.note?.startsWith("transfer:") ? <Repeat className="w-5 h-5 text-blue-500" /> : tx.categories?.icon || (tx.type === "income" ? "💰" : "📦")}
+                                                {tx.note?.startsWith("transfer:")
+                                                    ? <Repeat className="w-5 h-5" />
+                                                    : <span className="filter grayscale group-hover:grayscale-0 transition-all duration-300">{tx.categories?.icon || (tx.type === "income" ? "💰" : "📦")}</span>
+                                                }
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2">
-                                                    <p className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">
+                                                <div className="flex items-center gap-2 mb-0.5">
+                                                    <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
                                                         {tx.merchant_name || tx.categories?.name || "Transaction"}
                                                     </p>
+                                                    {tx.recurring_id && (
+                                                        <div className="bg-violet-50 dark:bg-violet-500/10 p-1 rounded-md" title="Recurring">
+                                                            <RefreshCw className="w-3 h-3 text-violet-600 dark:text-violet-400" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">
+                                                        {tx.categories?.name || "Uncategorized"}
+                                                    </span>
+                                                    <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700" />
+                                                    <span className="text-[10px] font-bold text-slate-500/80 uppercase tracking-tighter">
+                                                        {wallets.find((w) => w.id === tx.wallet_id)?.name || ""}
+                                                    </span>
                                                     {tx.status === "pending" && (
-                                                        <Badge variant="outline" className="text-[9px] border-amber-300 text-amber-600 px-1.5 py-0">
+                                                        <Badge variant="outline" className="text-[8px] border-amber-200 bg-amber-50 text-amber-600 px-1.5 py-0 font-black uppercase rounded-full">
                                                             Pending
                                                         </Badge>
                                                     )}
-                                                    {tx.recurring_id && (
-                                                        <span title="Recurring transaction" className="flex items-center">
-                                                            <RefreshCw className="w-3 h-3 text-violet-500" />
-                                                        </span>
-                                                    )}
                                                 </div>
-                                                <p className="text-[11px] text-slate-400 truncate">
-                                                    {tx.categories?.name || "Uncategorized"} • {wallets.find((w) => w.id === tx.wallet_id)?.name || ""}
-                                                </p>
                                             </div>
                                             <div className="text-right shrink-0">
-                                                <span className={cn(
-                                                    "text-sm font-semibold tabular-nums",
-                                                    tx.note?.startsWith("transfer:") ? "text-blue-500" : tx.type === "income" ? "text-emerald-600" : "text-red-500"
+                                                <p className={cn(
+                                                    "text-sm font-black tabular-nums tracking-tight",
+                                                    tx.note?.startsWith("transfer:") ? "text-blue-600" : tx.type === "income" ? "text-emerald-600" : "text-slate-900 dark:text-white"
                                                 )}>
                                                     {tx.note?.startsWith("transfer:") ? "" : tx.type === "income" ? "+" : "-"}{formatCurrency(Number(tx.amount), currency)}
-                                                </span>
+                                                </p>
                                             </div>
                                         </div>
                                     ))}
