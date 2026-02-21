@@ -19,24 +19,30 @@ export function SummaryCards({ income, expenses }: SummaryCardsProps) {
     const net = income - expenses;
 
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
             <StatCard
-                label="Total Income"
+                label="Income"
+                labelDesktop="Total Income"
                 value={formatCurrency(income, currency)}
                 icon={TrendingUp}
                 iconColor="text-emerald-600"
+                compact
             />
             <StatCard
-                label="Total Expenses"
+                label="Expenses"
+                labelDesktop="Total Expenses"
                 value={formatCurrency(expenses, currency)}
                 icon={TrendingDown}
                 iconColor="text-red-500"
+                compact
             />
             <StatCard
-                label="Net Balance"
+                label="Net"
+                labelDesktop="Net Balance"
                 value={formatCurrency(net, currency)}
                 icon={ArrowLeftRight}
                 iconColor={net >= 0 ? "text-emerald-600" : "text-red-500"}
+                compact
             />
         </div>
     );

@@ -44,14 +44,14 @@ export function MonthlyTrend({ transactions, month }: MonthlyTrendProps) {
     }, [transactions, month]);
 
     return (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl shadow-sm p-4 flex flex-col h-96">
-            <h2 className="text-sm font-medium text-slate-800 dark:text-slate-200 mb-4">Income vs Expenses Trend</h2>
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl shadow-sm p-3 sm:p-4 flex flex-col h-72 sm:h-96">
+            <h2 className="text-sm font-medium text-slate-800 dark:text-slate-200 mb-3 sm:mb-4">Income vs Expenses Trend</h2>
 
-            <div className={`flex-1 min-h-[300px] ${isPrivacyMode ? "blur-md opacity-50 transition-all" : ""}`}>
+            <div className={`flex-1 min-h-0 ${isPrivacyMode ? "blur-md opacity-50 transition-all" : ""}`}>
                 {transactions.length > 0 ? (
                     <ResponsiveLine
                         data={_data}
-                        margin={{ top: 20, right: 20, bottom: 40, left: 50 }}
+                        margin={{ top: 10, right: 10, bottom: 36, left: 40 }}
                         xScale={{ type: "point" }}
                         yScale={{ type: "linear", min: 0, max: "auto", stacked: false, reverse: false }}
                         curve="monotoneX"
@@ -59,17 +59,17 @@ export function MonthlyTrend({ transactions, month }: MonthlyTrendProps) {
                         lineWidth={2}
                         pointSize={0}
                         enableGridX={false}
-                        gridYValues={5}
+                        gridYValues={4}
                         axisTop={null}
                         axisRight={null}
                         axisLeft={{
                             tickSize: 0,
-                            tickPadding: 8,
-                            format: (v) => `$${v}`, // Optional: adjust currency symbol if needed or omit
+                            tickPadding: 4,
+                            format: (v) => `$${v}`,
                         }}
                         axisBottom={{
                             tickSize: 0,
-                            tickPadding: 8,
+                            tickPadding: 6,
                             tickRotation: -45,
                             tickValues: "every 5 days" as unknown as undefined,
                         }}
@@ -79,7 +79,7 @@ export function MonthlyTrend({ transactions, month }: MonthlyTrendProps) {
                         theme={{
                             text: { fill: "#64748b" },
                             grid: { line: { stroke: "#e2e8f0" } },
-                            axis: { ticks: { text: { fill: "#64748b", fontSize: 10 } } },
+                            axis: { ticks: { text: { fill: "#64748b", fontSize: 9 } } },
                             tooltip: {
                                 container: {
                                     background: "#ffffff",
@@ -94,13 +94,13 @@ export function MonthlyTrend({ transactions, month }: MonthlyTrendProps) {
                             {
                                 anchor: "top-right",
                                 direction: "row",
-                                itemWidth: 80,
-                                itemHeight: 20,
+                                itemWidth: 70,
+                                itemHeight: 16,
                                 itemTextColor: "#64748b",
-                                symbolSize: 10,
+                                symbolSize: 8,
                                 symbolShape: "circle",
                                 translateX: 0,
-                                translateY: -20,
+                                translateY: -10,
                             },
                         ]}
                     />

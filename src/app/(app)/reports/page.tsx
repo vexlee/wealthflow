@@ -163,19 +163,21 @@ export default function ReportsPage() {
     const handleNextMonth = () => setCurrentMonth(prev => addMonths(prev, 1));
 
     return (
-        <div className="p-6 lg:p-8 space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                        <FileBarChart className="w-6 h-6 text-violet-600" />
-                        Reports Overview
-                    </h1>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Detailed analysis of your finances</p>
+        <div className="p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
+            {/* Header */}
+            <div className="space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between sm:gap-4">
+                <div className="flex items-center gap-2">
+                    <FileBarChart className="w-5 h-5 sm:w-6 sm:h-6 text-violet-600 shrink-0" />
+                    <div>
+                        <h1 className="text-lg sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
+                            Reports
+                        </h1>
+                    </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
                     <Select value={selectedWalletId} onValueChange={setSelectedWalletId}>
-                        <SelectTrigger className="w-[140px] h-10 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl shadow-sm text-sm font-medium focus:ring-violet-500 text-slate-800 dark:text-slate-200">
+                        <SelectTrigger className="w-[120px] sm:w-[140px] h-9 sm:h-10 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl shadow-sm text-xs sm:text-sm font-medium focus:ring-violet-500 text-slate-800 dark:text-slate-200">
                             <SelectValue placeholder="All Accounts" />
                         </SelectTrigger>
                         <SelectContent className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl shadow-lg">
@@ -190,12 +192,12 @@ export default function ReportsPage() {
                         </SelectContent>
                     </Select>
 
-                    <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl p-1 shadow-sm">
+                    <div className="flex items-center gap-1 sm:gap-2 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl p-0.5 sm:p-1 shadow-sm">
                         <Button variant="ghost" size="icon" onClick={handlePrevMonth} className="h-8 w-8 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">
                             <ChevronLeft className="w-4 h-4" />
                         </Button>
-                        <span className="text-sm font-semibold min-w-[120px] text-center text-slate-800 dark:text-slate-200">
-                            {format(currentMonth, "MMMM yyyy")}
+                        <span className="text-xs sm:text-sm font-semibold min-w-[100px] sm:min-w-[120px] text-center text-slate-800 dark:text-slate-200">
+                            {format(currentMonth, "MMM yyyy")}
                         </span>
                         <Button variant="ghost" size="icon" onClick={handleNextMonth} className="h-8 w-8 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">
                             <ChevronRight className="w-4 h-4" />
@@ -205,26 +207,21 @@ export default function ReportsPage() {
             </div>
 
             {loading ? (
-                <div className="animate-pulse space-y-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="animate-pulse space-y-4 sm:space-y-6">
+                    <div className="grid grid-cols-3 gap-2 sm:gap-4">
                         {[...Array(3)].map((_, i) => (
-                            <div key={i} className="h-28 bg-slate-200 dark:bg-slate-800 rounded-xl" />
+                            <div key={i} className="h-20 sm:h-28 bg-slate-200 dark:bg-slate-800 rounded-xl" />
                         ))}
                     </div>
-                    <div className="h-96 bg-slate-200 dark:bg-slate-800 rounded-xl" />
+                    <div className="h-72 sm:h-96 bg-slate-200 dark:bg-slate-800 rounded-xl" />
                 </div>
             ) : (
-                <div className="space-y-6">
+                <div className="space-y-4 sm:space-y-6">
                     <SummaryCards income={income} expenses={expenses} />
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div className="lg:col-span-2">
-                            <ReportCalendar transactions={transactions} month={currentMonth} />
-                        </div>
-                        <div className="lg:col-span-1">
-                            <CategoryBreakdown transactions={transactions} />
-                        </div>
-                    </div>
+                    <ReportCalendar transactions={transactions} month={currentMonth} />
+
+                    <CategoryBreakdown transactions={transactions} />
 
                     <MonthlyTrend transactions={transactions} month={currentMonth} />
                 </div>
