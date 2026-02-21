@@ -28,6 +28,7 @@ import {
     Plus,
     RefreshCw,
     TrendingUp,
+    BarChart3,
 } from "lucide-react";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { KeyboardShortcutsDialog } from "@/components/shared/keyboard-shortcuts-dialog";
@@ -39,6 +40,7 @@ const navItems = [
     { href: "/transactions", icon: ArrowLeftRight, label: "Transactions" },
     { href: "/recurring", icon: RefreshCw, label: "Recurring" },
     { href: "/budgets", icon: PiggyBank, label: "Budgets" },
+    { href: "/reports", icon: BarChart3, label: "Reports" },
     { href: "/settings", icon: Settings, label: "Settings" },
 ];
 
@@ -47,6 +49,7 @@ const bottomNavItems = [
     { href: "/wallets", icon: Wallet, label: "Wallets" },
     { href: "/transactions", icon: ArrowLeftRight, label: "Transactions" },
     { href: "/budgets", icon: PiggyBank, label: "Budgets" },
+    { href: "/reports", icon: BarChart3, label: "Reports" },
     { href: "/settings", icon: Settings, label: "Settings" },
 ];
 

@@ -259,7 +259,7 @@ export default function InvestmentsPage() {
                         {cryptoWallets.map(wallet => {
                             const price = prices[wallet.currency_code || ""] || 0;
                             const fiatVal = wallet.balance * price;
-                            const symbol = SUPPORTED_CRYPTOS.find(c => c.id === wallet.currency_code)?.symbol || wallet.currency_code;
+                            const symbol = SUPPORTED_CRYPTOS.find(c => c.id === wallet.currency_code)?.symbol || wallet.currency_code || "";
                             return (
                                 <Card key={wallet.id} className="bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 shadow-sm">
                                     <div className="p-5 flex items-start gap-4">
@@ -271,7 +271,10 @@ export default function InvestmentsPage() {
                                             <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1 truncate">
                                                 {isPrivacyMode ? "••••••" : `${wallet.balance} ${symbol}`}
                                             </div>
-                                            <p className="text-sm text-slate-500 mt-1 mb-3">≈ {maskValue(fiatVal)}</p>
+                                            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                                                1 {symbol.toUpperCase()} = {maskValue(price)}
+                                            </p>
+                                            <p className="text-sm text-slate-500 mt-0.5 mb-3">≈ {maskValue(fiatVal)}</p>
                                             <Button
                                                 variant="outline"
                                                 className="w-full text-xs h-8 border-slate-200 dark:border-slate-700"

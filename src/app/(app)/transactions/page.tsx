@@ -230,6 +230,10 @@ function TransactionsContent() {
                 const dayOfMonth = selectedDate.getDate();
                 const totalInstalments = recurringType === "instalments" ? parseInt(numInstalments) : null;
 
+                // Calculate next run date as the following month since the first payment is created now
+                const nextMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, dayOfMonth);
+                const nextRunDate = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, "0")}-${String(nextMonth.getDate()).padStart(2, "0")}`;
+
                 // 1. Create the recurring template
                 const { data: recurringData, error: recurringError } = await supabase
                     .from("recurring_transactions")
@@ -243,9 +247,9 @@ function TransactionsContent() {
                         merchant_name: merchantName || null,
                         note: note || null,
                         is_active: true,
-                        next_run_date: date,
+                        next_run_date: nextRunDate,
                         total_instalments: totalInstalments,
-                        instalments_paid: 0,
+                        instalments_paid: 1,
                     })
                     .select()
                     .single();
