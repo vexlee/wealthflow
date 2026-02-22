@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { KeyboardShortcutsDialog } from "@/components/shared/keyboard-shortcuts-dialog";
+import { motion, AnimatePresence } from "framer-motion";
 
 const navItems = [
     { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -48,7 +49,6 @@ const bottomNavItems = [
     { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { href: "/wallets", icon: Wallet, label: "Wallets" },
     { href: "/transactions", icon: ArrowLeftRight, label: "Transactions" },
-    { href: "/budgets", icon: PiggyBank, label: "Budgets" },
     { href: "/reports", icon: BarChart3, label: "Reports" },
     { href: "/settings", icon: Settings, label: "Settings" },
 ];
@@ -206,16 +206,32 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </main>
 
             {/* Mobile FAB - Quick Add Transaction */}
-            <Link
-                href="/transactions?new=true"
-                className="lg:hidden fixed bottom-20 right-4 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-violet-500 to-violet-700 text-white shadow-lg shadow-violet-500/30 flex items-center justify-center active:scale-95 transition-transform hover:shadow-violet-500/50"
+            <motion.div
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.2, type: "spring", stiffness: 260, damping: 20 }}
+                className="lg:hidden fixed bottom-20 right-4 z-50"
             >
-                <Plus className="w-6 h-6" />
-            </Link>
+                {pathname === "/dashboard" ? (
+                    <button
+                        onClick={() => window.dispatchEvent(new CustomEvent("open-quick-add"))}
+                        className="w-14 h-14 rounded-full bg-gradient-to-br from-violet-500 to-violet-700 text-white shadow-lg shadow-violet-500/30 flex items-center justify-center active:scale-90 touch-none transition-transform hover:shadow-violet-500/50"
+                    >
+                        <Plus className="w-6 h-6" />
+                    </button>
+                ) : (
+                    <Link
+                        href="/transactions?new=true"
+                        className="w-14 h-14 rounded-full bg-gradient-to-br from-violet-500 to-violet-700 text-white shadow-lg shadow-violet-500/30 flex items-center justify-center active:scale-90 touch-none transition-transform hover:shadow-violet-500/50"
+                    >
+                        <Plus className="w-6 h-6" />
+                    </Link>
+                )}
+            </motion.div>
 
             {/* Mobile Bottom Nav */}
-            <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-t border-slate-200/80 dark:border-slate-800 shadow-[0_-2px_10px_rgba(0,0,0,0.04)]">
-                <div className="flex items-center justify-around h-16 px-2 pb-safe">
+            <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl border-t border-slate-200/50 dark:border-slate-800/50 shadow-[0_-8px_30px_rgba(0,0,0,0.04)] px-6 pb-safe">
+                <div className="flex items-center justify-between h-16 relative">
                     {bottomNavItems.map((item) => {
                         const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
                         return (
@@ -223,15 +239,36 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                 key={item.href}
                                 href={item.href}
                                 className={cn(
-                                    "flex flex-col items-center gap-1 px-2 py-1.5 rounded-xl transition-all duration-200 min-w-[52px]",
+                                    "relative flex flex-col items-center justify-center gap-1 transition-all duration-300 min-w-[56px] h-full",
                                     isActive ? "text-violet-600 dark:text-violet-400" : "text-slate-400 dark:text-slate-500"
                                 )}
                             >
-                                <item.icon className={cn(
-                                    "w-5 h-5 transition-all",
-                                    isActive && "drop-shadow-[0_0_8px_rgba(124,58,237,0.4)]"
-                                )} />
-                                <span className="text-[10px] font-medium">{item.label}</span>
+                                {isActive && (
+                                    <motion.div
+                                        layoutId="activeTabMobile"
+                                        className="absolute -top-1 w-12 h-1 bg-violet-600 dark:bg-violet-400 rounded-full shadow-[0_0_8px_rgba(124,58,237,0.4)]"
+                                        transition={{ type: "spring", bounce: 0.3, duration: 0.6 }}
+                                    />
+                                )}
+
+                                <motion.div
+                                    whileTap={{ scale: 0.9, y: 2 }}
+                                    animate={{
+                                        scale: isActive ? 1.1 : 1,
+                                    }}
+                                    className="relative flex flex-col items-center"
+                                >
+                                    <item.icon className={cn(
+                                        "w-5 h-5 mb-0.5 transition-all",
+                                        isActive && "drop-shadow-[0_0_10px_rgba(124,58,237,0.5)]"
+                                    )} />
+                                    <span className={cn(
+                                        "text-[9px] font-bold uppercase tracking-wider transition-all duration-300",
+                                        isActive ? "opacity-100 translate-y-0" : "opacity-60 translate-y-0"
+                                    )}>
+                                        {item.label}
+                                    </span>
+                                </motion.div>
                             </Link>
                         );
                     })}

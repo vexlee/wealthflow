@@ -26,6 +26,7 @@ import {
 import { Onboarding } from "@/components/shared/onboarding";
 import { CustomizeDashboardModal, DashboardSectionConfig, DEFAULT_DASHBOARD_CONFIG } from "@/components/dashboard/customize-modal";
 import { MetricsSettingsModal, DashboardMetricsConfig, DEFAULT_METRICS_CONFIG } from "@/components/dashboard/metrics-settings-modal";
+import { QuickAddTransaction } from "@/components/dashboard/quick-add-transaction";
 import { Button } from "@/components/ui/button";
 import { useCryptoPrices } from "@/hooks/use-crypto-prices";
 import { useMediaQuery } from "@/hooks/use-media-query";
@@ -52,6 +53,8 @@ export default function DashboardPage() {
     const [cashFlowData, setCashFlowData] = useState<{ id: string; data: { x: string; y: number }[] }[]>([]);
     const [loading, setLoading] = useState(true);
     const [showOnboarding, setShowOnboarding] = useState(false);
+    const [allCategories, setAllCategories] = useState<Category[]>([]);
+    const [quickAddOpen, setQuickAddOpen] = useState(false);
     const isMobile = useMediaQuery("(max-width: 640px)");
 
     // Layout customization state
@@ -287,6 +290,17 @@ export default function DashboardPage() {
 
         setBudgets((budgetData || []) as (Budget & { categories: Category | null })[]);
 
+        // Fetch categories for quick-add
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            const { data: cats } = await supabase
+                .from("categories")
+                .select("*")
+                .or(`user_id.eq.${user.id},is_default.eq.true`)
+                .order("name");
+            setAllCategories((cats || []) as Category[]);
+        }
+
         setLoading(false);
     }, [supabase]);
 
@@ -303,6 +317,13 @@ export default function DashboardPage() {
             }
         }
     }, [loading, wallets.length]);
+
+    // Listen for FAB quick-add event
+    useEffect(() => {
+        const handler = () => setQuickAddOpen(true);
+        window.addEventListener("open-quick-add", handler);
+        return () => window.removeEventListener("open-quick-add", handler);
+    }, []);
 
     const netWorth = wallets.reduce((sum, w) => {
         let wBalance = w.balance;
@@ -815,6 +836,14 @@ export default function DashboardPage() {
                 config={metricsConfig}
                 onSave={handleSaveMetrics}
                 wallets={wallets}
+            />
+
+            <QuickAddTransaction
+                open={quickAddOpen}
+                onOpenChange={setQuickAddOpen}
+                wallets={wallets}
+                categories={allCategories}
+                onSuccess={fetchData}
             />
         </div >
     );
