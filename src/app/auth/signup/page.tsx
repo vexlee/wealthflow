@@ -95,8 +95,8 @@ export default function SignUpPage() {
                 <div className="absolute -top-24 -right-24 w-48 h-48 bg-violet-500/10 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
 
                 <CardHeader className="text-center space-y-4 pt-8">
-                    <div className="mx-auto w-16 h-16 rounded-[2rem] bg-gradient-to-br from-indigo-500 to-violet-700 flex items-center justify-center shadow-xl shadow-violet-500/20 transform transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3">
-                        <Wallet className="w-8 h-8 text-white" />
+                    <div className="mx-auto w-16 h-16 rounded-[2rem] bg-gradient-to-br from-indigo-500 to-violet-700 flex items-center justify-center shadow-xl shadow-violet-500/20 transform transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3 overflow-hidden p-2.5">
+                        <img src="/favicon.ico" alt="WealthFlow Logo" className="w-full h-full object-contain" />
                     </div>
                     <div>
                         <CardTitle className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Create account</CardTitle>

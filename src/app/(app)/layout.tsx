@@ -59,8 +59,8 @@ function SidebarContent({ pathname, onNavigate }: { pathname: string; onNavigate
             {/* Logo */}
             <div className="p-6 pb-4">
                 <Link href="/dashboard" className="flex items-center gap-3 group" onClick={onNavigate}>
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center shadow-lg shadow-violet-500/20 group-hover:shadow-violet-500/40 transition-shadow">
-                        <Wallet className="w-5 h-5 text-white" />
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center shadow-lg shadow-violet-500/20 group-hover:shadow-violet-500/40 transition-shadow overflow-hidden p-1.5">
+                        <img src="/favicon.ico" alt="WealthFlow Logo" className="w-full h-full object-contain" />
                     </div>
                     <div>
                         <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">WealthFlow</h1>
