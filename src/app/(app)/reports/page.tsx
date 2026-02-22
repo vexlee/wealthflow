@@ -166,21 +166,21 @@ export default function ReportsPage() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
-                        <FileBarChart className="w-8 h-8 text-indigo-600" />
+                    <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2 sm:gap-3">
+                        <FileBarChart className="w-6 h-6 sm:w-8 sm:h-8 text-indigo-600" />
                         Reports
                     </h1>
-                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
+                    <p className="text-[11px] sm:text-sm font-medium text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1">
                         Analyze your financial performance and trends
                     </p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button
                                 variant="outline"
-                                className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl px-5 h-12 font-bold shadow-sm hover:shadow-md transition-all text-slate-900 dark:text-white"
+                                className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl px-4 sm:px-5 h-10 sm:h-12 font-bold shadow-sm hover:shadow-md transition-all text-slate-900 dark:text-white text-xs sm:text-base"
                             >
                                 {selectedWalletIds.length === 0
                                     ? "All Accounts"
@@ -216,15 +216,15 @@ export default function ReportsPage() {
                         </DropdownMenuContent>
                     </DropdownMenu>
 
-                    <div className="flex items-center gap-1 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-1 shadow-sm h-12">
-                        <Button variant="ghost" size="icon" onClick={handlePrevMonth} className="h-10 w-10 text-slate-600 hover:text-slate-900 rounded-xl">
-                            <ChevronLeft className="w-5 h-5" />
+                    <div className="flex items-center gap-1 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-1 shadow-sm h-10 sm:h-12">
+                        <Button variant="ghost" size="icon" onClick={handlePrevMonth} className="h-8 w-8 sm:h-10 sm:w-10 text-slate-600 hover:text-slate-900 rounded-xl">
+                            <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                         </Button>
-                        <span className="text-sm font-black min-w-[120px] text-center text-slate-900 dark:text-white uppercase tracking-widest">
+                        <span className="text-[11px] sm:text-sm font-black min-w-[100px] sm:min-w-[120px] text-center text-slate-900 dark:text-white uppercase tracking-widest">
                             {format(currentMonth, "MMM yyyy")}
                         </span>
-                        <Button variant="ghost" size="icon" onClick={handleNextMonth} className="h-10 w-10 text-slate-600 hover:text-slate-900 rounded-xl">
-                            <ChevronRight className="w-5 h-5" />
+                        <Button variant="ghost" size="icon" onClick={handleNextMonth} className="h-8 w-8 sm:h-10 sm:w-10 text-slate-600 hover:text-slate-900 rounded-xl">
+                            <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
                         </Button>
                     </div>
                 </div>

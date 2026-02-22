@@ -239,31 +239,31 @@ export default function WalletsPage() {
     }
 
     return (
-        <div className="p-4 lg:p-8 space-y-6">
+        <div className="p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Wallets</h1>
-                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
+                    <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">Wallets</h1>
+                    <p className="text-[11px] sm:text-sm font-medium text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1">
                         Total Balance: <span className="text-slate-900 dark:text-white font-bold">{formatCurrency(totalBalance, currency)}</span>
                     </p>
                 </div>
                 <Button
                     onClick={openCreate}
-                    className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 rounded-2xl px-6 h-12 font-bold shadow-lg shadow-slate-200 dark:shadow-none transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                    className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 rounded-2xl px-5 sm:px-6 h-11 sm:h-12 text-sm sm:text-base font-bold shadow-lg shadow-slate-200 dark:shadow-none transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
                 >
-                    <Plus className="w-5 h-5 mr-2" />
+                    <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" />
                     Add Wallet
                 </Button>
             </div>
 
             {/* Wallet Grid */}
             {wallets.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                     {wallets.map((wallet) => (
                         <Card
                             key={wallet.id}
-                            className="group relative bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-[2rem] shadow-sm hover:shadow-2xl transition-all duration-500 cursor-pointer overflow-hidden"
+                            className="group relative bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl sm:rounded-[2rem] shadow-sm hover:shadow-2xl transition-all duration-500 cursor-pointer overflow-hidden"
                             onClick={() => openEdit(wallet)}
                         >
                             {/* Dynamic Background Glow */}
@@ -274,14 +274,14 @@ export default function WalletsPage() {
 
                             {/* Side Accent Glow */}
                             <div
-                                className="absolute left-0 top-0 bottom-0 w-1.5 opacity-30 group-hover:opacity-60 transition-opacity duration-500"
+                                className="absolute left-0 top-0 bottom-0 w-1 sm:w-1.5 opacity-30 group-hover:opacity-60 transition-opacity duration-500"
                                 style={{ backgroundColor: wallet.color || "#7c3aed" }}
                             />
 
-                            <CardContent className="p-7 relative z-10">
-                                <div className="flex items-start justify-between mb-6">
+                            <CardContent className="p-5 sm:p-7 relative z-10">
+                                <div className="flex items-start justify-between mb-4 sm:mb-6">
                                     <div
-                                        className="w-16 h-16 rounded-[2rem] flex items-center justify-center text-3xl shadow-sm transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3"
+                                        className="w-12 h-12 sm:w-16 h-16 rounded-xl sm:rounded-[2rem] flex items-center justify-center text-2xl sm:text-3xl shadow-sm transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3"
                                         style={{
                                             backgroundColor: `${wallet.color || "#7c3aed"}15`,
                                             color: wallet.color || "#7c3aed"
@@ -291,7 +291,7 @@ export default function WalletsPage() {
                                     </div>
                                     <div className="flex flex-col items-end">
                                         <span
-                                            className="text-[10px] uppercase tracking-[0.2em] font-black px-3 py-1.5 rounded-full border shadow-sm transition-colors duration-500"
+                                            className="text-[9px] sm:text-[10px] uppercase tracking-[0.15em] sm:tracking-[0.2em] font-black px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border shadow-sm transition-colors duration-500"
                                             style={{
                                                 backgroundColor: `${wallet.color || "#7c3aed"}10`,
                                                 borderColor: `${wallet.color || "#7c3aed"}30`,
@@ -303,16 +303,16 @@ export default function WalletsPage() {
                                     </div>
                                 </div>
 
-                                <div className="space-y-1 mb-6">
-                                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pl-1">{wallet.name}</p>
-                                    <div className={`text-3xl font-black tracking-tighter leading-none ${wallet.balance >= 0 ? "text-slate-900 dark:text-white" : "text-rose-500"}`}>
+                                <div className="space-y-0.5 sm:space-y-1 mb-4 sm:mb-6">
+                                    <p className="text-[9px] sm:text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pl-1">{wallet.name}</p>
+                                    <div className={`text-2xl sm:text-3xl font-black tracking-tighter leading-none ${wallet.balance >= 0 ? "text-slate-900 dark:text-white" : "text-rose-500"}`}>
                                         {wallet.type === "crypto" ? (
-                                            <div className="flex flex-col gap-1.5">
-                                                <div className="flex items-baseline gap-2">
+                                            <div className="flex flex-col gap-1 sm:gap-1.5">
+                                                <div className="flex items-baseline gap-1.5 sm:gap-2">
                                                     <span>{wallet.balance}</span>
-                                                    <span className="text-sm font-black text-slate-400 uppercase">{SUPPORTED_CRYPTOS.find(c => c.id === wallet.currency_code)?.symbol || wallet.currency_code}</span>
+                                                    <span className="text-xs sm:text-sm font-black text-slate-400 uppercase">{SUPPORTED_CRYPTOS.find(c => c.id === wallet.currency_code)?.symbol || wallet.currency_code}</span>
                                                 </div>
-                                                <span className="text-[11px] font-black text-slate-500/80 bg-slate-50 dark:bg-slate-800/50 w-fit px-2.5 py-1 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                                <span className="text-[10px] sm:text-[11px] font-black text-slate-500/80 bg-slate-50 dark:bg-slate-800/50 w-fit px-2 py-0.5 sm:py-1 rounded-2xl border border-slate-100 dark:border-slate-800">
                                                     ≈ {formatCurrency(wallet.balance * (prices[wallet.currency_code || ""] || 0), currency)}
                                                 </span>
                                             </div>

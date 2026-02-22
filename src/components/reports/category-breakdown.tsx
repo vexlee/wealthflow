@@ -74,27 +74,27 @@ export function CategoryBreakdown({ transactions }: CategoryBreakdownProps) {
     }
 
     return (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-[2rem] shadow-sm p-6 lg:p-8 h-full flex flex-col hover:shadow-2xl hover:shadow-slate-200/50 dark:hover:shadow-black/20 transition-all duration-500 overflow-hidden relative">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl sm:rounded-[2rem] shadow-sm p-5 sm:p-6 lg:p-8 h-full flex flex-col hover:shadow-2xl hover:shadow-slate-200/50 dark:hover:shadow-black/20 transition-all duration-500 overflow-hidden relative">
             {/* Subtle Gradient Glow */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-indigo-50/50 to-transparent dark:from-indigo-900/10 opacity-50 pointer-events-none" />
 
             <div className="relative z-10">
-                <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center justify-between mb-6 sm:mb-8">
                     <div>
-                        <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Spending Analytics</h2>
-                        <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Breakdown by expense category</p>
+                        <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight">Spending Analytics</h2>
+                        <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5 sm:mt-1">Breakdown by expense category</p>
                     </div>
                     {!isPrivacyMode && (
                         <div className="text-right">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Spent</p>
-                            <p className="text-2xl font-black text-slate-900 dark:text-white tabular-nums tracking-tighter">{maskValue(totalExpenses)}</p>
+                            <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5 sm:mb-1">Total Spent</p>
+                            <p className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tabular-nums tracking-tighter">{maskValue(totalExpenses)}</p>
                         </div>
                     )}
                 </div>
 
-                <div className="flex-1 flex flex-col lg:flex-row items-center gap-8 lg:gap-12 min-h-0">
+                <div className="flex-1 flex flex-col lg:flex-row items-center gap-6 sm:gap-8 lg:gap-12 min-h-0">
                     {/* Donut Chart */}
-                    <div className="relative w-full aspect-square max-w-[320px] lg:max-w-none lg:h-[360px] lg:flex-1">
+                    <div className="relative w-full aspect-square max-w-[260px] sm:max-w-[320px] lg:max-w-none lg:h-[360px] lg:flex-1">
                         <div className={`w-full h-full ${isPrivacyMode ? "blur-xl opacity-30 grayscale pointer-events-none" : ""}`}>
                             <ResponsivePie
                                 data={_data}
@@ -130,10 +130,10 @@ export function CategoryBreakdown({ transactions }: CategoryBreakdownProps) {
 
                         {/* Centered Total Info */}
                         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                            <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                            <span className="text-[10px] sm:text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-center px-4 truncate w-full">
                                 {activeId || "All Expenses"}
                             </span>
-                            <span className="text-2xl font-black text-slate-900 dark:text-white mt-1">
+                            <span className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5 sm:mt-1">
                                 {activeId
                                     ? `${_data.find(d => d.id === activeId)?.percentage.toFixed(1)}%`
                                     : maskValue(totalExpenses)

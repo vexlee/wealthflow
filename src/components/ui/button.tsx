@@ -38,6 +38,8 @@ const buttonVariants = cva(
   }
 )
 
+import { motion } from "framer-motion"
+
 function Button({
   className,
   variant = "default",
@@ -48,15 +50,27 @@ function Button({
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean
   }) {
-  const Comp = asChild ? Slot.Root : "button"
+  if (asChild) {
+    return (
+      <Slot.Root
+        data-slot="button"
+        data-variant={variant}
+        data-size={size}
+        className={cn(buttonVariants({ variant, size, className }))}
+        {...props}
+      />
+    )
+  }
 
   return (
-    <Comp
+    <motion.button
+      whileHover={{ scale: 1.01, transition: { duration: 0.2 } }}
+      whileTap={{ scale: 0.98, transition: { duration: 0.1 } }}
       data-slot="button"
       data-variant={variant}
       data-size={size}
       className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
+      {...(props as any)}
     />
   )
 }

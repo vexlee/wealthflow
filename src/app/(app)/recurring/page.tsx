@@ -204,7 +204,7 @@ export default function RecurringPage() {
 
         return (
             <Card className={cn(
-                "group relative bg-white dark:bg-slate-900 border rounded-[2rem] shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden",
+                "group relative bg-white dark:bg-slate-900 border rounded-2xl sm:rounded-[2rem] shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden",
                 item.is_active
                     ? "border-slate-200/80 dark:border-slate-800"
                     : "border-slate-200/40 dark:border-slate-800/60 opacity-60"
@@ -217,15 +217,15 @@ export default function RecurringPage() {
 
                 {/* Side Accent Glow */}
                 <div
-                    className="absolute left-0 top-0 bottom-0 w-1.5 opacity-30 group-hover:opacity-60 transition-opacity duration-500"
+                    className="absolute left-0 top-0 bottom-0 w-1 sm:w-1.5 opacity-30 group-hover:opacity-60 transition-opacity duration-500"
                     style={{ backgroundColor: themeColor }}
                 />
 
-                <CardContent className="p-7 relative z-10">
-                    <div className="flex items-start gap-4">
+                <CardContent className="p-4 sm:p-7 relative z-10">
+                    <div className="flex items-start gap-3 sm:gap-4">
                         {/* Icon */}
                         <div
-                            className="w-16 h-16 rounded-[2rem] flex items-center justify-center text-3xl shrink-0 shadow-sm transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3"
+                            className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-[2rem] flex items-center justify-center text-2xl sm:text-3xl shrink-0 shadow-sm transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3"
                             style={{
                                 backgroundColor: `${themeColor}15`,
                                 color: themeColor
@@ -236,14 +236,14 @@ export default function RecurringPage() {
 
                         {/* Details */}
                         <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                <p className="text-lg font-black text-slate-900 dark:text-white tracking-tight leading-none truncate">
+                            <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1 flex-wrap">
+                                <p className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight leading-none truncate">
                                     {item.merchant_name || item.categories?.name || "Recurring"}
                                 </p>
                                 <Badge
                                     variant="outline"
                                     className={cn(
-                                        "text-[10px] font-black uppercase tracking-tighter px-2 py-0.5 rounded-full shrink-0",
+                                        "text-[9px] sm:text-[10px] font-black uppercase tracking-tighter px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full shrink-0",
                                         item.type === "income"
                                             ? "border-emerald-100 bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:border-emerald-500/20"
                                             : "border-red-100 bg-red-50 text-red-500 dark:bg-red-500/10 dark:border-red-500/20"
@@ -252,48 +252,48 @@ export default function RecurringPage() {
                                     {item.type}
                                 </Badge>
                                 {isInstalment && (
-                                    <Badge variant="outline" className="text-[10px] font-black uppercase tracking-tighter px-2 py-0.5 rounded-full border-violet-100 bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:border-violet-500/20 shrink-0">
+                                    <Badge variant="outline" className="text-[9px] sm:text-[10px] font-black uppercase tracking-tighter px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full border-violet-100 bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:border-violet-500/20 shrink-0">
                                         Instalment
                                     </Badge>
                                 )}
                             </div>
 
-                            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">
-                                <span>{item.categories?.name || "Uncategorized"}</span>
+                            <div className="flex items-center gap-1.5 sm:gap-2 text-[9px] sm:text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 sm:mb-4">
+                                <span className="truncate">{item.categories?.name || "Uncategorized"}</span>
                                 {wallet && (
                                     <>
-                                        <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700" />
-                                        <span>{wallet.icon} {wallet.name}</span>
+                                        <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700 shrink-0" />
+                                        <span className="truncate">{wallet.icon} {wallet.name}</span>
                                     </>
                                 )}
-                                <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700" />
-                                <span>Day {item.day_of_month}</span>
+                                <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700 shrink-0" />
+                                <span className="shrink-0">Day {item.day_of_month}</span>
                             </div>
 
                             {/* Amount and Next Run */}
-                            <div className="flex items-end justify-between gap-4">
+                            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4">
                                 <div>
                                     <p className={cn(
-                                        "text-2xl font-black tabular-nums tracking-tight leading-none",
+                                        "text-xl sm:text-2xl font-black tabular-nums tracking-tight leading-none",
                                         item.type === "income" ? "text-emerald-600" : "text-slate-900 dark:text-white"
                                     )}>
                                         {item.type === "income" ? "+" : "-"}{formatCurrency(Number(item.amount), currency)}
-                                        <span className="text-xs font-bold text-slate-400 dark:text-slate-500 ml-1.5">/ mo</span>
+                                        <span className="text-xs font-bold text-slate-400 dark:text-slate-500 ml-1">/ mo</span>
                                     </p>
 
                                     {item.is_active ? (
-                                        <p className="mt-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] flex items-center gap-1.5">
-                                            <RefreshCw className="w-3 h-3 animate-[spin_4s_linear_infinite]" />
+                                        <p className="mt-2 sm:mt-3 text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-[0.1em] sm:tracking-[0.15em] flex items-center gap-1 sm:gap-1.5">
+                                            <RefreshCw className="w-2.5 h-2.5 sm:w-3 sm:h-3 animate-[spin_4s_linear_infinite]" />
                                             Next Run: {getNextMonthLabel(item.next_run_date)}
                                         </p>
                                     ) : (
-                                        <div className="mt-3 flex items-center gap-1.5">
+                                        <div className="mt-2 sm:mt-3 flex items-center gap-1.5">
                                             {isInstalment && item.instalments_paid >= (item.total_instalments ?? 0) ? (
-                                                <Badge variant="outline" className="text-[9px] font-black uppercase border-emerald-100 bg-emerald-50 text-emerald-600 px-2 py-0 rounded-full">
+                                                <Badge variant="outline" className="text-[8px] sm:text-[9px] font-black uppercase border-emerald-100 bg-emerald-50 text-emerald-600 px-1.5 sm:px-2 py-0 rounded-full">
                                                     Completed
                                                 </Badge>
                                             ) : (
-                                                <Badge variant="outline" className="text-[9px] font-black uppercase border-slate-100 bg-slate-50 text-slate-400 px-2 py-0 rounded-full">
+                                                <Badge variant="outline" className="text-[8px] sm:text-[9px] font-black uppercase border-slate-100 bg-slate-50 text-slate-400 px-1.5 sm:px-2 py-0 rounded-full">
                                                     Paused
                                                 </Badge>
                                             )}
@@ -301,20 +301,20 @@ export default function RecurringPage() {
                                     )}
                                 </div>
 
-                                {/* Actions - Desktop Style */}
-                                <div className="flex items-center gap-2">
+                                {/* Actions */}
+                                <div className="flex items-center gap-1.5 sm:gap-2">
                                     <button
                                         onClick={() => openEdit(item)}
-                                        className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-300 shadow-sm"
+                                        className="p-2 sm:p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-300 shadow-sm"
                                         title="Edit"
                                     >
-                                        <Pencil className="w-4 h-4" />
+                                        <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                     </button>
                                     <button
                                         onClick={() => handleToggle(item.id, item.is_active)}
                                         disabled={toggling === item.id}
                                         className={cn(
-                                            "p-2.5 rounded-xl transition-all duration-300 shadow-sm",
+                                            "p-2 sm:p-2.5 rounded-xl transition-all duration-300 shadow-sm",
                                             item.is_active
                                                 ? "bg-amber-50 text-amber-600 hover:bg-amber-100 dark:bg-amber-500/10"
                                                 : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-500/10"
@@ -322,31 +322,31 @@ export default function RecurringPage() {
                                         title={item.is_active ? "Pause" : "Resume"}
                                     >
                                         {toggling === item.id ? (
-                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
                                         ) : item.is_active ? (
-                                            <PauseCircle className="w-4 h-4" />
+                                            <PauseCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                         ) : (
-                                            <RefreshCw className="w-4 h-4" />
+                                            <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                         )}
                                     </button>
                                     <button
                                         onClick={() => setConfirmDeleteId(item.id)}
-                                        className="p-2.5 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-500/10 transition-all duration-300 shadow-sm"
+                                        className="p-2 sm:p-2.5 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-500/10 transition-all duration-300 shadow-sm"
                                         title="Delete"
                                     >
-                                        <Trash2 className="w-4 h-4" />
+                                        <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                     </button>
                                 </div>
                             </div>
 
                             {/* Instalment progress */}
                             {isInstalment && progress !== null && (
-                                <div className="mt-5 space-y-2">
-                                    <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                <div className="mt-4 sm:mt-5 space-y-1.5 sm:space-y-2">
+                                    <div className="flex justify-between text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                                         <span>{item.instalments_paid} / {item.total_instalments} paid</span>
                                         <span>{remaining} left</span>
                                     </div>
-                                    <div className="h-2 bg-slate-50 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-100 dark:border-slate-800">
+                                    <div className="h-1.5 sm:h-2 bg-slate-50 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-100 dark:border-slate-800">
                                         <div
                                             className="h-full bg-gradient-to-r from-violet-500 to-violet-600 rounded-full transition-all duration-1000"
                                             style={{ width: `${progress}%`, boxShadow: `0 0 10px rgba(124, 58, 237, 0.3)` }}
@@ -362,12 +362,12 @@ export default function RecurringPage() {
     };
 
     return (
-        <div className="p-4 lg:p-8 space-y-6">
+        <div className="p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Recurring</h1>
-                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
+                    <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">Recurring</h1>
+                    <p className="text-[11px] sm:text-sm font-medium text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1">
                         {recurring.length} scheduled {recurring.length === 1 ? "entry" : "entries"}
                     </p>
                 </div>
@@ -375,13 +375,14 @@ export default function RecurringPage() {
 
             {/* Stats */}
             {recurring.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                     <StatCard
                         label="Active Schedules"
                         value={String(active.length)}
                         icon={RefreshCw}
                         theme="violet"
                         compact
+                        disablePrivacy={true}
                     />
                     <StatCard
                         label="Monthly Outflow"
@@ -394,6 +395,7 @@ export default function RecurringPage() {
                         icon={TrendingDown}
                         theme="rose"
                         compact
+                        disablePrivacy={true}
                     />
                     <StatCard
                         label="Monthly Inflow"
@@ -406,6 +408,7 @@ export default function RecurringPage() {
                         icon={DollarSign}
                         theme="emerald"
                         compact
+                        disablePrivacy={true}
                     />
                 </div>
             )}

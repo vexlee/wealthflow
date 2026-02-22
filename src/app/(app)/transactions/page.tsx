@@ -458,29 +458,29 @@ function TransactionsContent() {
     }
 
     return (
-        <div className="p-4 lg:p-8 space-y-6">
+        <div className="p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Transactions</h1>
-                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">{filtered.length} transactions total</p>
+                    <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">Transactions</h1>
+                    <p className="text-[11px] sm:text-sm font-medium text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1">{filtered.length} transactions total</p>
                 </div>
                 <div className="flex items-center gap-2">
                     {wallets.length >= 2 && (
                         <Button
                             onClick={openTransfer}
                             variant="outline"
-                            className="h-11 rounded-xl border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 font-bold transition-all duration-300 px-5"
+                            className="h-10 sm:h-11 rounded-xl border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-bold transition-all duration-300 px-4 sm:px-5"
                         >
-                            <Repeat className="w-4 h-4 mr-2" />
+                            <Repeat className="w-4 h-4 mr-1.5 sm:mr-2" />
                             Transfer
                         </Button>
                     )}
                     <Button
                         onClick={openCreate}
-                        className="h-11 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 font-bold shadow-lg shadow-slate-200 dark:shadow-none transition-all duration-300 hover:scale-[1.02] px-5"
+                        className="h-10 sm:h-11 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 text-sm font-bold shadow-lg shadow-slate-200 dark:shadow-none transition-all duration-300 hover:scale-[1.02] px-4 sm:px-5"
                     >
-                        <Plus className="w-4 h-4 mr-2" />
+                        <Plus className="w-4 h-4 mr-1.5 sm:mr-2" />
                         Add New
                     </Button>
                 </div>
@@ -492,15 +492,15 @@ function TransactionsContent() {
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-slate-900 dark:group-focus-within:text-white transition-colors" />
                     <Input
                         ref={searchInputRef}
-                        placeholder="Search by merchant, note, or category..."
+                        placeholder="Search..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-11 h-12 w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-white placeholder:text-slate-400 shadow-sm focus:ring-2 focus:ring-slate-900 dark:focus:ring-white transition-all"
+                        className="pl-11 h-11 sm:h-12 w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-white text-sm placeholder:text-slate-400 shadow-sm focus:ring-2 focus:ring-slate-900 dark:focus:ring-white transition-all"
                     />
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                     <Select value={filterType} onValueChange={setFilterType}>
-                        <SelectTrigger className="h-12 min-w-[140px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-white font-bold shadow-sm">
+                        <SelectTrigger className="h-11 sm:h-12 flex-1 sm:min-w-[140px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-white text-xs sm:text-sm font-bold shadow-sm">
                             <SelectValue placeholder="All Types" />
                         </SelectTrigger>
                         <SelectContent className="rounded-2xl border-slate-200 dark:border-slate-800">
@@ -511,7 +511,7 @@ function TransactionsContent() {
                         </SelectContent>
                     </Select>
                     <Select value={filterWallet} onValueChange={setFilterWallet}>
-                        <SelectTrigger className="h-12 min-w-[160px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-white font-bold shadow-sm">
+                        <SelectTrigger className="h-11 sm:h-12 flex-1 sm:min-w-[160px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-white text-xs sm:text-sm font-bold shadow-sm">
                             <SelectValue placeholder="All Wallets" />
                         </SelectTrigger>
                         <SelectContent className="rounded-2xl border-slate-200 dark:border-slate-800">
@@ -536,16 +536,16 @@ function TransactionsContent() {
                                 </p>
                                 <div className="h-px flex-1 bg-slate-100 dark:bg-slate-800/50" />
                             </div>
-                            <Card className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-[2rem] shadow-sm hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-black/20 transition-all duration-500 overflow-hidden">
+                            <Card className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl sm:rounded-[2rem] shadow-sm hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-black/20 transition-all duration-500 overflow-hidden">
                                 <CardContent className="p-0 divide-y divide-slate-50 dark:divide-slate-800/50">
                                     {txs.map((tx) => (
                                         <div
                                             key={tx.id}
                                             onClick={() => openEdit(tx)}
-                                            className="flex items-center gap-4 p-5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-all duration-300 cursor-pointer active:scale-[0.995]"
+                                            className="flex items-center gap-3 sm:gap-4 p-4 sm:p-5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-all duration-300 cursor-pointer active:scale-[0.995]"
                                         >
                                             <div className={cn(
-                                                "w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 transition-transform duration-500 group-hover:scale-110 shadow-sm",
+                                                "w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center text-lg sm:text-xl shrink-0 transition-transform duration-500 group-hover:scale-110 shadow-sm",
                                                 tx.note?.startsWith("transfer:") ? "bg-blue-50 text-blue-600 dark:bg-blue-500/10" : "bg-slate-50 text-slate-600 dark:bg-slate-800/50 dark:text-slate-400"
                                             )}>
                                                 {tx.note?.startsWith("transfer:")
@@ -565,7 +565,7 @@ function TransactionsContent() {
                                                     )}
                                                 </div>
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">
+                                                    <span className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-tighter">
                                                         {tx.categories?.name || "Uncategorized"}
                                                     </span>
                                                     <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700" />
@@ -581,7 +581,7 @@ function TransactionsContent() {
                                             </div>
                                             <div className="text-right shrink-0">
                                                 <p className={cn(
-                                                    "text-sm font-black tabular-nums tracking-tight",
+                                                    "text-xs sm:text-sm font-black tabular-nums tracking-tight",
                                                     tx.note?.startsWith("transfer:") ? "text-blue-600" : tx.type === "income" ? "text-emerald-600" : "text-slate-900 dark:text-white"
                                                 )}>
                                                     {tx.note?.startsWith("transfer:") ? "" : tx.type === "income" ? "+" : "-"}{formatCurrency(Number(tx.amount), currency)}

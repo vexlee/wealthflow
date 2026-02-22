@@ -154,45 +154,46 @@ export default function BudgetsPage() {
     }
 
     return (
-        <div className="p-4 lg:p-8 space-y-6">
+        <div className="p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Budgets</h1>
-                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Manage your monthly spending limits</p>
+                    <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">Budgets</h1>
+                    <p className="text-[11px] sm:text-sm font-medium text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1">Manage your monthly spending limits</p>
                 </div>
                 <Button
                     onClick={openCreate}
-                    className="h-11 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 font-bold shadow-lg shadow-slate-200 dark:shadow-none transition-all duration-300 hover:scale-[1.02] px-6"
+                    className="h-10 sm:h-11 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 text-sm font-bold shadow-lg shadow-slate-200 dark:shadow-none transition-all duration-300 hover:scale-[1.02] px-5 sm:px-6"
                 >
-                    <Plus className="w-5 h-5 mr-2" />
+                    <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" />
                     Set Budget
                 </Button>
             </div>
 
             {/* Month Selector */}
             <div className="flex items-center justify-center p-1 bg-slate-50 dark:bg-slate-800/50 rounded-2xl w-fit mx-auto border border-slate-100 dark:border-slate-800">
-                <Button variant="ghost" size="icon" onClick={prevMonth} className="h-10 w-10 text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-xl hover:bg-white dark:hover:bg-slate-700 shadow-none hover:shadow-sm">
-                    <ChevronLeft className="w-5 h-5" />
+                <Button variant="ghost" size="icon" onClick={prevMonth} className="h-9 w-9 sm:h-10 sm:w-10 text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-xl hover:bg-white dark:hover:bg-slate-700 shadow-none hover:shadow-sm">
+                    <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                 </Button>
-                <span className="text-sm font-black text-slate-900 dark:text-white min-w-[160px] text-center uppercase tracking-[0.1em]">
+                <span className="text-[11px] sm:text-sm font-black text-slate-900 dark:text-white min-w-[120px] sm:min-w-[160px] text-center uppercase tracking-[0.1em]">
                     {monthNames[month - 1]} {year}
                 </span>
-                <Button variant="ghost" size="icon" onClick={nextMonth} className="h-10 w-10 text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-xl hover:bg-white dark:hover:bg-slate-700 shadow-none hover:shadow-sm">
-                    <ChevronRight className="w-5 h-5" />
+                <Button variant="ghost" size="icon" onClick={nextMonth} className="h-9 w-9 sm:h-10 sm:w-10 text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-xl hover:bg-white dark:hover:bg-slate-700 shadow-none hover:shadow-sm">
+                    <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
                 </Button>
             </div>
 
             {/* Stats */}
             {budgets.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <StatCard label="Total Budget" value={formatCurrency(totalBudget, currency)} icon={DollarSign} theme="indigo" />
-                    <StatCard label="Total Spent" value={formatCurrency(totalSpent, currency)} icon={TrendingDown} theme="rose" />
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                    <StatCard label="Total Budget" value={formatCurrency(totalBudget, currency)} icon={DollarSign} theme="indigo" compact />
+                    <StatCard label="Total Spent" value={formatCurrency(totalSpent, currency)} icon={TrendingDown} theme="rose" compact />
                     <StatCard
                         label="Remaining"
                         value={formatCurrency(remaining, currency)}
                         icon={PiggyBank}
                         theme={remaining >= 0 ? "emerald" : "rose"}
+                        compact
                     />
                 </div>
             )}
@@ -207,7 +208,7 @@ export default function BudgetsPage() {
                         return (
                             <Card
                                 key={b.id}
-                                className="group relative bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-[2rem] shadow-sm hover:shadow-2xl transition-all duration-500 cursor-pointer overflow-hidden"
+                                className="group relative bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl sm:rounded-[2rem] shadow-sm hover:shadow-2xl transition-all duration-500 cursor-pointer overflow-hidden"
                                 onClick={() => openEdit(b)}
                             >
                                 {/* Dynamic Background Glow */}
@@ -218,15 +219,15 @@ export default function BudgetsPage() {
 
                                 {/* Side Accent Glow */}
                                 <div
-                                    className="absolute left-0 top-0 bottom-0 w-1.5 opacity-30 group-hover:opacity-60 transition-opacity duration-500"
+                                    className="absolute left-0 top-0 bottom-0 w-1 sm:w-1.5 opacity-30 group-hover:opacity-60 transition-opacity duration-500"
                                     style={{ backgroundColor: isOver ? "#ef4444" : themeColor }}
                                 />
 
-                                <CardContent className="p-7 relative z-10">
-                                    <div className="flex items-start justify-between mb-6">
-                                        <div className="flex items-center gap-4">
+                                <CardContent className="p-5 sm:p-7 relative z-10">
+                                    <div className="flex items-start justify-between mb-4 sm:mb-6">
+                                        <div className="flex items-center gap-3 sm:gap-4">
                                             <div
-                                                className="w-16 h-16 rounded-[2rem] flex items-center justify-center text-3xl shadow-sm transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3"
+                                                className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-[2rem] flex items-center justify-center text-2xl sm:text-3xl shadow-sm transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3"
                                                 style={{
                                                     backgroundColor: `${isOver ? "#ef4444" : themeColor}15`,
                                                     color: isOver ? "#ef4444" : themeColor
@@ -235,24 +236,24 @@ export default function BudgetsPage() {
                                                 {b.categories?.icon || "📦"}
                                             </div>
                                             <div>
-                                                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1 pl-0.5">Category</p>
-                                                <p className="text-xl font-black text-slate-900 dark:text-white tracking-tight leading-none truncate">{b.categories?.name || "Budget"}</p>
+                                                <p className="text-[9px] sm:text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-0.5 sm:mb-1 pl-0.5">Category</p>
+                                                <p className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight leading-none truncate">{b.categories?.name || "Budget"}</p>
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1">Usage</p>
-                                            <p className={`text-xl font-black tracking-tighter leading-none ${isOver ? "text-rose-500" : "text-slate-900 dark:text-white"}`}>
+                                            <p className="text-[9px] sm:text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-0.5 sm:mb-1">Usage</p>
+                                            <p className={`text-lg sm:text-xl font-black tracking-tighter leading-none ${isOver ? "text-rose-500" : "text-slate-900 dark:text-white"}`}>
                                                 {Math.round(percentage)}%
                                             </p>
                                         </div>
                                     </div>
 
-                                    <div className="space-y-4">
-                                        <div className="flex items-end justify-between font-black uppercase tracking-widest text-[10px]">
+                                    <div className="space-y-3 sm:space-y-4">
+                                        <div className="flex items-end justify-between font-black uppercase tracking-widest text-[9px] sm:text-[10px]">
                                             <span className={isOver ? "text-rose-500" : "text-slate-500"}>{formatCurrency(b.spent, currency)} spent</span>
                                             <span className="text-slate-400/80">Limit: {formatCurrency(Number(b.amount), currency)}</span>
                                         </div>
-                                        <div className="h-4 w-full bg-slate-50 dark:bg-slate-800/50 rounded-full overflow-hidden border border-slate-100 dark:border-slate-800/50">
+                                        <div className="h-3 sm:h-4 w-full bg-slate-50 dark:bg-slate-800/50 rounded-full overflow-hidden border border-slate-100 dark:border-slate-800/50">
                                             <div
                                                 className={cn(
                                                     "h-full rounded-full transition-all duration-1000",

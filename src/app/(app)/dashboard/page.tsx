@@ -1,5 +1,7 @@
 "use client";
 
+import { motion } from "framer-motion";
+
 import { useEffect, useState, useCallback } from "react";
 import { useCurrency } from "@/contexts/currency-context";
 import { usePrivacy } from "@/contexts/privacy-context";
@@ -358,13 +360,13 @@ export default function DashboardPage() {
     };
 
     return (
-        <div className="p-6 lg:p-8 space-y-6">
+        <div className="p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
             {/* Header */}
             <div>
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Dashboard</h1>
-                        <p className="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-400 mt-1">Your financial overview at a glance</p>
+                        <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">Dashboard</h1>
+                        <p className="text-[11px] sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1">Your financial overview at a glance</p>
                     </div>
                     <div className="flex items-center gap-2 sm:gap-3">
                         <Button
@@ -407,366 +409,399 @@ export default function DashboardPage() {
             </div>
 
             {/* Dynamic Layout Engine */}
-            <div className="grid grid-cols-12 gap-6">
+            <motion.div
+                className="grid grid-cols-12 gap-4 sm:gap-6"
+                variants={{
+                    hidden: { opacity: 0 },
+                    visible: {
+                        opacity: 1,
+                        transition: {
+                            staggerChildren: 0.1
+                        }
+                    }
+                }}
+                initial="hidden"
+                animate="visible"
+            >
                 {layoutConfig.map((section, index) => {
                     if (!section.visible) return null;
 
                     const spanClass = getSpanClass(section.size);
                     const sectionStyle = { order: index };
 
-                    switch (section.id) {
-                        case "stat-cards":
-                            return (
-                                <div key={section.id} style={sectionStyle} className={`${spanClass} grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4`}>
-                                    {metricsConfig.visibleCards.netWorth && (
-                                        <StatCard
-                                            label="Net Worth"
-                                            value={maskValue(netWorth)}
-                                            icon={DollarSign}
-                                            theme="indigo"
-                                        />
-                                    )}
-                                    {metricsConfig.visibleCards.income && (
-                                        <StatCard
-                                            label="Monthly Income"
-                                            value={maskValue(monthlyIncome)}
-                                            icon={TrendingUp}
-                                            theme="emerald"
-                                        />
-                                    )}
-                                    {metricsConfig.visibleCards.expenses && (
-                                        <StatCard
-                                            label="Monthly Expenses"
-                                            value={maskValue(monthlyExpenses)}
-                                            icon={TrendingDown}
-                                            theme="rose"
-                                        />
-                                    )}
-                                    {metricsConfig.visibleCards.balance && (
-                                        <StatCard
-                                            label="Monthly Balance"
-                                            value={maskValue(monthlyIncome - monthlyExpenses)}
-                                            icon={ArrowLeftRight}
-                                            theme={monthlyIncome - monthlyExpenses >= 0 ? "emerald" : "rose"}
-                                        />
-                                    )}
-                                    {metricsConfig.visibleCards.dailyBudget && (
-                                        <StatCard
-                                            label="Daily Budget"
-                                            value={dailySuggested > 0 ? maskValue(dailySuggested) : "—"}
-                                            icon={PiggyBank}
-                                            theme="amber"
-                                        />
-                                    )}
-                                </div>
-                            );
-
-                        case "spending-distribution":
-                            return (
-                                <div key={section.id} style={sectionStyle} className={spanClass}>
-                                    <Card className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-sm h-full flex flex-col">
-                                        <CardHeader className="pb-0">
-                                            <div className="flex items-center justify-between">
-                                                <div>
-                                                    <CardTitle className="text-sm font-bold text-slate-900 dark:text-white">Spending Analytics</CardTitle>
-                                                    <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">By Category</p>
-                                                </div>
+                    return (
+                        <motion.div
+                            key={section.id}
+                            variants={{
+                                hidden: { opacity: 0, y: 20 },
+                                visible: {
+                                    opacity: 1,
+                                    y: 0,
+                                    transition: {
+                                        duration: 0.5,
+                                        ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+                                    },
+                                },
+                            }}
+                            className={spanClass}
+                            style={sectionStyle}
+                        >
+                            {(() => {
+                                switch (section.id) {
+                                    case "stat-cards":
+                                        return (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
+                                                {metricsConfig.visibleCards.netWorth && (
+                                                    <StatCard
+                                                        label="Net Worth"
+                                                        value={formatCurrency(netWorth, currency)}
+                                                        maskedValue={maskValue(netWorth)}
+                                                        icon={DollarSign}
+                                                        theme="indigo"
+                                                    />
+                                                )}
+                                                {metricsConfig.visibleCards.income && (
+                                                    <StatCard
+                                                        label="Monthly Income"
+                                                        value={formatCurrency(monthlyIncome, currency)}
+                                                        maskedValue={maskValue(monthlyIncome)}
+                                                        icon={TrendingUp}
+                                                        theme="emerald"
+                                                    />
+                                                )}
+                                                {metricsConfig.visibleCards.expenses && (
+                                                    <StatCard
+                                                        label="Monthly Expenses"
+                                                        value={formatCurrency(monthlyExpenses, currency)}
+                                                        maskedValue={maskValue(monthlyExpenses)}
+                                                        icon={TrendingDown}
+                                                        theme="rose"
+                                                    />
+                                                )}
+                                                {metricsConfig.visibleCards.balance && (
+                                                    <StatCard
+                                                        label="Monthly Balance"
+                                                        value={formatCurrency(monthlyIncome - monthlyExpenses, currency)}
+                                                        maskedValue={maskValue(monthlyIncome - monthlyExpenses)}
+                                                        icon={ArrowLeftRight}
+                                                        theme={monthlyIncome - monthlyExpenses >= 0 ? "emerald" : "rose"}
+                                                    />
+                                                )}
+                                                {metricsConfig.visibleCards.dailyBudget && (
+                                                    <StatCard
+                                                        label="Daily Budget"
+                                                        value={dailySuggested > 0 ? formatCurrency(dailySuggested, currency) : "—"}
+                                                        maskedValue={dailySuggested > 0 ? maskValue(dailySuggested) : "—"}
+                                                        icon={PiggyBank}
+                                                        theme="amber"
+                                                    />
+                                                )}
                                             </div>
-                                        </CardHeader>
-                                        <CardContent className="pt-4">
-                                            <div className={`${isPrivacyMode ? "blur-sm opacity-50" : ""}`}>
-                                                {spendingByCategory.length > 0 ? (
-                                                    <div className="space-y-4">
-                                                        {spendingByCategory.map((category) => {
-                                                            const percentage = monthlyExpenses > 0 ? (category.value / monthlyExpenses) * 100 : 0;
-                                                            return (
-                                                                <div key={category.id} className="group">
-                                                                    <div className="flex items-center justify-between mb-1.5">
-                                                                        <div className="flex items-center gap-2">
-                                                                            <div
-                                                                                className="w-2 h-2 rounded-full"
-                                                                                style={{ backgroundColor: category.color }}
-                                                                            />
-                                                                            <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-tight">
-                                                                                {category.label}
-                                                                            </span>
+                                        );
+
+                                    case "spending-distribution":
+                                        return (
+                                            <Card className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-sm h-full flex flex-col">
+                                                <CardHeader className="pb-0">
+                                                    <div className="flex items-center justify-between">
+                                                        <div>
+                                                            <CardTitle className="text-sm font-bold text-slate-900 dark:text-white">Spending Analytics</CardTitle>
+                                                            <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">By Category</p>
+                                                        </div>
+                                                    </div>
+                                                </CardHeader>
+                                                <CardContent className="pt-2 sm:pt-4 px-4 sm:px-6">
+                                                    <div className={`${isPrivacyMode ? "blur-sm opacity-50" : ""}`}>
+                                                        {spendingByCategory.length > 0 ? (
+                                                            <div className="space-y-2.5 sm:space-y-4">
+                                                                {spendingByCategory.map((category) => {
+                                                                    const percentage = monthlyExpenses > 0 ? (category.value / monthlyExpenses) * 100 : 0;
+                                                                    return (
+                                                                        <div key={category.id} className="group">
+                                                                            <div className="flex items-center justify-between mb-1.5">
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <div
+                                                                                        className="w-2 h-2 rounded-full"
+                                                                                        style={{ backgroundColor: category.color }}
+                                                                                    />
+                                                                                    <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-tight">
+                                                                                        {category.label}
+                                                                                    </span>
+                                                                                </div>
+                                                                                <span className="text-[11px] font-black text-slate-900 dark:text-white">
+                                                                                    {percentage.toFixed(1)}%
+                                                                                </span>
+                                                                            </div>
+                                                                            <div className="h-2.5 w-full bg-slate-50 dark:bg-slate-800/50 rounded-full overflow-hidden">
+                                                                                <div
+                                                                                    className="h-full rounded-full transition-all duration-1000 group-hover:opacity-80"
+                                                                                    style={{
+                                                                                        width: `${percentage}%`,
+                                                                                        backgroundColor: category.color,
+                                                                                        boxShadow: `0 0 10px ${category.color}30`
+                                                                                    }}
+                                                                                />
+                                                                            </div>
                                                                         </div>
-                                                                        <span className="text-[11px] font-black text-slate-900 dark:text-white">
-                                                                            {percentage.toFixed(1)}%
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        ) : (
+                                                            <div className="h-72 flex items-center justify-center text-slate-400 text-sm">
+                                                                No expenses this month yet
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        );
+
+                                    case "cash-flow":
+                                        return (
+                                            <Card className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-sm h-full flex flex-col">
+                                                <CardHeader className="pb-0">
+                                                    <div className="flex items-center justify-between">
+                                                        <div>
+                                                            <CardTitle className="text-sm font-bold text-slate-900 dark:text-white">Cash Flow</CardTitle>
+                                                            <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Last 30 Days</p>
+                                                        </div>
+                                                    </div>
+                                                </CardHeader>
+                                                <CardContent className="pt-2 sm:pt-4 px-2 sm:px-6">
+                                                    <div className={`h-60 sm:h-72 ${isPrivacyMode ? "blur-sm opacity-50" : ""}`}>
+                                                        {cashFlowData.length > 0 ? (
+                                                            <ResponsiveLine
+                                                                data={cashFlowData}
+                                                                margin={{ top: 10, right: 10, bottom: 40, left: 45 }}
+                                                                xScale={{ type: "point" }}
+                                                                yScale={{ type: "linear", min: 0, max: "auto" }}
+                                                                curve="monotoneX"
+                                                                colors={["oklch(0.65 0.15 160)", "oklch(0.6 0.18 30)"]}
+                                                                lineWidth={3}
+                                                                pointSize={0}
+                                                                enableGridX={false}
+                                                                gridYValues={4}
+                                                                axisLeft={{
+                                                                    tickSize: 0,
+                                                                    tickPadding: 10,
+                                                                    format: (v) => formatCurrency(v as number, currency),
+                                                                }}
+                                                                axisBottom={{
+                                                                    tickSize: 0,
+                                                                    tickPadding: 12,
+                                                                    tickRotation: 0,
+                                                                    tickValues: "every 10 days" as unknown as undefined,
+                                                                }}
+                                                                enableArea={true}
+                                                                areaOpacity={0.1}
+                                                                theme={{
+                                                                    text: { fill: "oklch(0.55 0.02 80)", fontSize: 10, fontWeight: 500 },
+                                                                    grid: { line: { stroke: "oklch(0.92 0.02 80)", strokeWidth: 1 } },
+                                                                    axis: {
+                                                                        domain: { line: { stroke: "transparent" } },
+                                                                        ticks: { text: { fill: "oklch(0.55 0.02 80)" } }
+                                                                    },
+                                                                    tooltip: {
+                                                                        container: {
+                                                                            background: "oklch(0.99 0.005 80)",
+                                                                            color: "oklch(0.25 0.02 80)",
+                                                                            borderRadius: "12px",
+                                                                            border: "1px solid oklch(0.88 0.02 80)",
+                                                                            boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)",
+                                                                            padding: "10px",
+                                                                            fontSize: "11px",
+                                                                            fontWeight: 600
+                                                                        },
+                                                                    },
+                                                                }}
+                                                                enableSlices="x"
+                                                            />
+                                                        ) : (
+                                                            <div className="h-full flex items-center justify-center text-slate-400 text-sm">
+                                                                No transaction data available
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        );
+
+                                    case "recent-transactions":
+                                        return (
+                                            <Card className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-sm h-full flex flex-col">
+                                                <CardHeader className="pb-4">
+                                                    <div className="flex items-center justify-between">
+                                                        <div>
+                                                            <CardTitle className="text-sm font-bold text-slate-900 dark:text-white">Recent Transactions</CardTitle>
+                                                            <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Latest updates</p>
+                                                        </div>
+                                                        <Link
+                                                            href="/transactions"
+                                                            className="text-[11px] font-bold text-violet-600 hover:text-violet-700 flex items-center gap-1 transition-all hover:gap-1.5"
+                                                        >
+                                                            View All
+                                                            <ArrowRight className="w-3 h-3" />
+                                                        </Link>
+                                                    </div>
+                                                </CardHeader>
+                                                <CardContent className="space-y-1.5">
+                                                    {recentTransactions.length > 0 ? (
+                                                        recentTransactions.map((tx) => (
+                                                            <div key={tx.id} className="flex items-center gap-3 p-2.5 rounded-lg active:bg-slate-100 dark:active:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer sm:cursor-default">
+                                                                <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-base">
+                                                                    {tx.categories?.icon || "📦"}
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <p className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">
+                                                                        {tx.merchant_name || tx.categories?.name || "Transaction"}
+                                                                    </p>
+                                                                    <p className="text-[11px] text-slate-400">{tx.date ? formatDateShort(tx.date) : ""}</p>
+                                                                </div>
+                                                                <span className={`text-sm font-semibold tabular-nums ${tx.type === "income" ? "text-emerald-600" : "text-red-500"}`}>
+                                                                    {tx.type === "income" ? "+" : "-"}{maskValue(Number(tx.amount))}
+                                                                </span>
+                                                            </div>
+                                                        ))
+                                                    ) : (
+                                                        <div className="py-8 text-center text-slate-400 text-sm">No transactions yet</div>
+                                                    )}
+                                                </CardContent>
+                                            </Card>
+                                        );
+
+                                    case "budget-overview":
+                                        return (
+                                            <Card className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-sm h-full flex flex-col">
+                                                <CardHeader className="pb-4">
+                                                    <div className="flex items-center justify-between">
+                                                        <div>
+                                                            <CardTitle className="text-sm font-bold text-slate-900 dark:text-white">Budget Status</CardTitle>
+                                                            <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Performance tracking</p>
+                                                        </div>
+                                                        <div className="flex items-center gap-3">
+                                                            <Badge variant="outline" className="text-[9px] font-bold border-slate-200 rounded-full py-0 px-2 text-slate-400 uppercase tracking-wider">
+                                                                {daysLeft} days left
+                                                            </Badge>
+                                                            <Link
+                                                                href="/budgets"
+                                                                className="text-[11px] font-bold text-violet-600 hover:text-violet-700 flex items-center gap-1 transition-all hover:gap-1.5"
+                                                            >
+                                                                View All
+                                                                <ArrowRight className="w-3 h-3" />
+                                                            </Link>
+                                                        </div>
+                                                    </div>
+                                                </CardHeader>
+                                                <CardContent className="space-y-5">
+                                                    {budgets.length > 0 ? (
+                                                        budgets.map((b) => {
+                                                            const spentAmount = b.spent || 0;
+                                                            const percentage = Math.min((spentAmount / Number(b.amount)) * 100, 100);
+                                                            const isOver = spentAmount > Number(b.amount);
+                                                            return (
+                                                                <div key={b.id} className="space-y-2">
+                                                                    <div className="flex items-center justify-between">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className="text-base">{b.categories?.icon || "📦"}</span>
+                                                                            <span className="text-sm text-slate-800 dark:text-slate-200">{b.categories?.name || "Budget"}</span>
+                                                                        </div>
+                                                                        <span className={`text-xs font-medium ${isOver ? "text-red-500" : "text-slate-500"}`}>
+                                                                            {maskValue(b.spent || 0)} / {maskValue(Number(b.amount))}
                                                                         </span>
                                                                     </div>
-                                                                    <div className="h-2.5 w-full bg-slate-50 dark:bg-slate-800/50 rounded-full overflow-hidden">
-                                                                        <div
-                                                                            className="h-full rounded-full transition-all duration-1000 group-hover:opacity-80"
-                                                                            style={{
-                                                                                width: `${percentage}%`,
-                                                                                backgroundColor: category.color,
-                                                                                boxShadow: `0 0 10px ${category.color}30`
-                                                                            }}
-                                                                        />
-                                                                    </div>
+                                                                    <Progress
+                                                                        value={percentage}
+                                                                        className="h-1.5 bg-slate-100 dark:bg-slate-800"
+                                                                        indicatorClassName={getBudgetProgressColor(percentage)}
+                                                                    />
                                                                 </div>
                                                             );
-                                                        })}
-                                                    </div>
-                                                ) : (
-                                                    <div className="h-72 flex items-center justify-center text-slate-400 text-sm">
-                                                        No expenses this month yet
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                </div>
-                            );
+                                                        })
+                                                    ) : (
+                                                        <div className="py-8 text-center text-slate-400 text-sm">No budgets set for this month</div>
+                                                    )}
+                                                </CardContent>
+                                            </Card>
+                                        );
 
-                        case "cash-flow":
-                            return (
-                                <div key={section.id} style={sectionStyle} className={spanClass}>
-                                    <Card className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-sm h-full flex flex-col">
-                                        <CardHeader className="pb-0">
-                                            <div className="flex items-center justify-between">
-                                                <div>
-                                                    <CardTitle className="text-sm font-bold text-slate-900 dark:text-white">Cash Flow</CardTitle>
-                                                    <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Last 30 Days</p>
-                                                </div>
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent className="pt-4">
-                                            <div className={`h-72 ${isPrivacyMode ? "blur-sm opacity-50" : ""}`}>
-                                                {cashFlowData.length > 0 ? (
-                                                    <ResponsiveLine
-                                                        data={cashFlowData}
-                                                        margin={{ top: 10, right: 10, bottom: 40, left: 45 }}
-                                                        xScale={{ type: "point" }}
-                                                        yScale={{ type: "linear", min: 0, max: "auto" }}
-                                                        curve="monotoneX"
-                                                        colors={["oklch(0.65 0.15 160)", "oklch(0.6 0.18 30)"]}
-                                                        lineWidth={3}
-                                                        pointSize={0}
-                                                        enableGridX={false}
-                                                        gridYValues={4}
-                                                        axisLeft={{
-                                                            tickSize: 0,
-                                                            tickPadding: 10,
-                                                            format: (v) => formatCurrency(v as number, currency),
-                                                        }}
-                                                        axisBottom={{
-                                                            tickSize: 0,
-                                                            tickPadding: 12,
-                                                            tickRotation: 0,
-                                                            tickValues: "every 10 days" as unknown as undefined,
-                                                        }}
-                                                        enableArea={true}
-                                                        areaOpacity={0.1}
-                                                        theme={{
-                                                            text: { fill: "oklch(0.55 0.02 80)", fontSize: 10, fontWeight: 500 },
-                                                            grid: { line: { stroke: "oklch(0.92 0.02 80)", strokeWidth: 1 } },
-                                                            axis: {
-                                                                domain: { line: { stroke: "transparent" } },
-                                                                ticks: { text: { fill: "oklch(0.55 0.02 80)" } }
-                                                            },
-                                                            tooltip: {
-                                                                container: {
-                                                                    background: "oklch(0.99 0.005 80)",
-                                                                    color: "oklch(0.25 0.02 80)",
-                                                                    borderRadius: "12px",
-                                                                    border: "1px solid oklch(0.88 0.02 80)",
-                                                                    boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)",
-                                                                    padding: "10px",
-                                                                    fontSize: "11px",
-                                                                    fontWeight: 600
-                                                                },
-                                                            },
-                                                        }}
-                                                        enableSlices="x"
-                                                    />
-                                                ) : (
-                                                    <div className="h-full flex items-center justify-center text-slate-400 text-sm">
-                                                        No transaction data available
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                </div>
-                            );
-
-                        case "recent-transactions":
-                            return (
-                                <div key={section.id} style={sectionStyle} className={spanClass}>
-                                    <Card className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-sm h-full flex flex-col">
-                                        <CardHeader className="pb-4">
-                                            <div className="flex items-center justify-between">
-                                                <div>
-                                                    <CardTitle className="text-sm font-bold text-slate-900 dark:text-white">Recent Transactions</CardTitle>
-                                                    <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Latest updates</p>
-                                                </div>
-                                                <Link
-                                                    href="/transactions"
-                                                    className="text-[11px] font-bold text-violet-600 hover:text-violet-700 flex items-center gap-1 transition-all hover:gap-1.5"
-                                                >
-                                                    View All
-                                                    <ArrowRight className="w-3 h-3" />
-                                                </Link>
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent className="space-y-1.5">
-                                            {recentTransactions.length > 0 ? (
-                                                recentTransactions.map((tx) => (
-                                                    <div key={tx.id} className="flex items-center gap-3 p-2.5 rounded-lg active:bg-slate-100 dark:active:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer sm:cursor-default">
-                                                        <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-base">
-                                                            {tx.categories?.icon || "📦"}
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">
-                                                                {tx.merchant_name || tx.categories?.name || "Transaction"}
-                                                            </p>
-                                                            <p className="text-[11px] text-slate-400">{tx.date ? formatDateShort(tx.date) : ""}</p>
-                                                        </div>
-                                                        <span className={`text-sm font-semibold tabular-nums ${tx.type === "income" ? "text-emerald-600" : "text-red-500"}`}>
-                                                            {tx.type === "income" ? "+" : "-"}{maskValue(Number(tx.amount))}
-                                                        </span>
-                                                    </div>
-                                                ))
-                                            ) : (
-                                                <div className="py-8 text-center text-slate-400 text-sm">No transactions yet</div>
-                                            )}
-                                        </CardContent>
-                                    </Card>
-                                </div>
-                            );
-
-                        case "budget-overview":
-                            return (
-                                <div key={section.id} style={sectionStyle} className={spanClass}>
-                                    <Card className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-sm h-full flex flex-col">
-                                        <CardHeader className="pb-4">
-                                            <div className="flex items-center justify-between">
-                                                <div>
-                                                    <CardTitle className="text-sm font-bold text-slate-900 dark:text-white">Budget Status</CardTitle>
-                                                    <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Performance tracking</p>
-                                                </div>
-                                                <div className="flex items-center gap-3">
-                                                    <Badge variant="outline" className="text-[9px] font-bold border-slate-200 rounded-full py-0 px-2 text-slate-400 uppercase tracking-wider">
-                                                        {daysLeft} days left
-                                                    </Badge>
+                                    case "wallets":
+                                        return wallets.length > 0 ? (
+                                            <div className="flex flex-col">
+                                                <div className="flex items-center justify-between mb-3 mt-2">
+                                                    <h2 className="text-sm font-medium text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                                                        <Wallet className="w-4 h-4" />
+                                                        Your Wallets
+                                                    </h2>
                                                     <Link
-                                                        href="/budgets"
-                                                        className="text-[11px] font-bold text-violet-600 hover:text-violet-700 flex items-center gap-1 transition-all hover:gap-1.5"
+                                                        href="/wallets"
+                                                        className="text-xs font-medium text-violet-600 hover:text-violet-700 flex items-center gap-1 transition-colors"
                                                     >
                                                         View All
                                                         <ArrowRight className="w-3 h-3" />
                                                     </Link>
                                                 </div>
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent className="space-y-5">
-                                            {budgets.length > 0 ? (
-                                                budgets.map((b) => {
-                                                    const spentAmount = b.spent || 0;
-                                                    const percentage = Math.min((spentAmount / Number(b.amount)) * 100, 100);
-                                                    const isOver = spentAmount > Number(b.amount);
-                                                    return (
-                                                        <div key={b.id} className="space-y-2">
-                                                            <div className="flex items-center justify-between">
-                                                                <div className="flex items-center gap-2">
-                                                                    <span className="text-base">{b.categories?.icon || "📦"}</span>
-                                                                    <span className="text-sm text-slate-800 dark:text-slate-200">{b.categories?.name || "Budget"}</span>
-                                                                </div>
-                                                                <span className={`text-xs font-medium ${isOver ? "text-red-500" : "text-slate-500"}`}>
-                                                                    {maskValue(b.spent || 0)} / {maskValue(Number(b.amount))}
-                                                                </span>
-                                                            </div>
-                                                            <Progress
-                                                                value={percentage}
-                                                                className="h-1.5 bg-slate-100 dark:bg-slate-800"
-                                                                indicatorClassName={getBudgetProgressColor(percentage)}
-                                                            />
-                                                        </div>
-                                                    );
-                                                })
-                                            ) : (
-                                                <div className="py-8 text-center text-slate-400 text-sm">No budgets set for this month</div>
-                                            )}
-                                        </CardContent>
-                                    </Card>
-                                </div>
-                            );
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 flex-1">
+                                                    {wallets.map((wallet) => (
+                                                        <Card key={wallet.id} className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl sm:rounded-[2rem] shadow-sm overflow-hidden group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative">
+                                                            <CardContent className="p-4 sm:p-6">
+                                                                {/* Background Glow */}
+                                                                <div
+                                                                    className="absolute inset-0 opacity-[0.05] group-hover:opacity-[0.1] transition-opacity duration-700"
+                                                                    style={{ background: `linear-gradient(135deg, ${wallet.color || "#7c3aed"}, transparent 60%)` }}
+                                                                />
 
-                        case "wallets":
-                            return wallets.length > 0 ? (
-                                <div key={section.id} style={sectionStyle} className={`${spanClass} flex flex-col`}>
-                                    <div className="flex items-center justify-between mb-3 mt-2">
-                                        <h2 className="text-sm font-medium text-slate-600 dark:text-slate-400 flex items-center gap-2">
-                                            <Wallet className="w-4 h-4" />
-                                            Your Wallets
-                                        </h2>
-                                        <Link
-                                            href="/wallets"
-                                            className="text-xs font-medium text-violet-600 hover:text-violet-700 flex items-center gap-1 transition-colors"
-                                        >
-                                            View All
-                                            <ArrowRight className="w-3 h-3" />
-                                        </Link>
-                                    </div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 flex-1">
-                                        {wallets.map((wallet) => (
-                                            <Card key={wallet.id} className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-[2rem] shadow-sm overflow-hidden group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative">
-                                                <CardContent className="p-6">
-                                                    {/* Background Glow */}
-                                                    <div
-                                                        className="absolute inset-0 opacity-[0.05] group-hover:opacity-[0.1] transition-opacity duration-700"
-                                                        style={{ background: `linear-gradient(135deg, ${wallet.color || "#7c3aed"}, transparent 60%)` }}
-                                                    />
+                                                                {/* Side border glow */}
+                                                                <div
+                                                                    className="absolute left-0 top-0 bottom-0 w-1 opacity-20"
+                                                                    style={{ backgroundColor: wallet.color || "#7c3aed" }}
+                                                                />
 
-                                                    {/* Side border glow */}
-                                                    <div
-                                                        className="absolute left-0 top-0 bottom-0 w-1 opacity-20"
-                                                        style={{ backgroundColor: wallet.color || "#7c3aed" }}
-                                                    />
-
-                                                    <div className="relative flex items-center gap-4">
-                                                        <div
-                                                            className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-inner transition-transform group-hover:scale-110 group-hover:rotate-3 duration-500"
-                                                            style={{ backgroundColor: `${wallet.color || "#7c3aed"}20` }}
-                                                        >
-                                                            {wallet.icon || "💵"}
-                                                        </div>
-                                                        <div className="min-w-0 flex-1">
-                                                            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none mb-1.5">{wallet.name}</p>
-                                                            <div className={`text-xl font-black tracking-tight leading-none ${wallet.balance >= 0 ? "text-slate-900 dark:text-white" : "text-rose-500"}`}>
-                                                                {wallet.type === "crypto" ? (
-                                                                    <div className="flex flex-col gap-1">
-                                                                        <span className="text-lg">{wallet.balance} {SUPPORTED_CRYPTOS.find(c => c.id === wallet.currency_code)?.symbol || wallet.currency_code}</span>
-                                                                        <span className="text-[10px] font-bold text-slate-400">≈ {formatCurrency(wallet.balance * (prices[wallet.currency_code || ""] || 0), currency)}</span>
+                                                                <div className="relative flex items-center gap-4">
+                                                                    <div
+                                                                        className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-inner transition-transform group-hover:scale-110 group-hover:rotate-3 duration-500"
+                                                                        style={{ backgroundColor: `${wallet.color || "#7c3aed"}20` }}
+                                                                    >
+                                                                        {wallet.icon || "💵"}
                                                                     </div>
-                                                                ) : maskValue(wallet.balance)}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
-                                        ))}
-                                    </div>
-                                </div>
-                            ) : null;
+                                                                    <div className="min-w-0 flex-1">
+                                                                        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none mb-1.5">{wallet.name}</p>
+                                                                        <div className={`text-xl font-black tracking-tight leading-none ${wallet.balance >= 0 ? "text-slate-900 dark:text-white" : "text-rose-500"}`}>
+                                                                            {wallet.type === "crypto" ? (
+                                                                                <div className="flex flex-col gap-1">
+                                                                                    <span className="text-lg">{wallet.balance} {SUPPORTED_CRYPTOS.find(c => c.id === wallet.currency_code)?.symbol || wallet.currency_code}</span>
+                                                                                    <span className="text-[10px] font-bold text-slate-400">≈ {formatCurrency(wallet.balance * (prices[wallet.currency_code || ""] || 0), currency)}</span>
+                                                                                </div>
+                                                                            ) : maskValue(wallet.balance)}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </CardContent>
+                                                        </Card>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ) : null;
 
-                        default:
-                            return null;
-                    }
+                                    default:
+                                        return null;
+                                }
+                            })()}
+                        </motion.div>
+                    );
                 })}
-            </div>
+            </motion.div>
 
             {/* Onboarding */}
-            {showOnboarding && (
-                <Onboarding
-                    onComplete={() => {
-                        setShowOnboarding(false);
-                        fetchData();
-                    }}
-                />
-            )}
+            {
+                showOnboarding && (
+                    <Onboarding
+                        onComplete={() => {
+                            setShowOnboarding(false);
+                            fetchData();
+                        }}
+                    />
+                )
+            }
 
             <CustomizeDashboardModal
                 open={isCustomizeModalOpen}
@@ -781,6 +816,6 @@ export default function DashboardPage() {
                 onSave={handleSaveMetrics}
                 wallets={wallets}
             />
-        </div>
+        </div >
     );
 }

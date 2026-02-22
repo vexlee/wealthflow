@@ -14,6 +14,9 @@ interface StatCardProps {
     iconColor?: string;
     compact?: boolean;
     theme?: "emerald" | "rose" | "indigo" | "amber" | "sky" | "violet" | "slate";
+    maskedValue?: string;
+    isPrivacyDelayed?: boolean;
+    disablePrivacy?: boolean;
 }
 
 const themeStyles = {
@@ -68,22 +71,63 @@ const themeStyles = {
     }
 };
 
+import { motion } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
+import { usePrivacy } from "@/contexts/privacy-context";
+
 export function StatCard({
     label,
     labelDesktop,
     value,
+    maskedValue,
     icon: Icon,
     trend,
     className,
     iconColor,
     compact,
-    theme = "slate"
+    theme = "slate",
+    isPrivacyDelayed = false,
+    disablePrivacy = false
 }: StatCardProps) {
     const style = themeStyles[theme];
+    const { isPrivacyMode } = usePrivacy();
 
-    return (
+    // Always default to true (privacy view) on initial mount for security, unless disabled
+    const [isFlipped, setIsFlipped] = useState(!disablePrivacy);
+    const hasInteracted = useRef(false);
+    const previousPrivacyMode = useRef(isPrivacyMode);
+
+    // Only sync with global privacy mode if it actually changes (toggled by user), 
+    // never on the initial load sync from context.
+    useEffect(() => {
+        if (!disablePrivacy && previousPrivacyMode.current !== isPrivacyMode) {
+            setIsFlipped(isPrivacyMode);
+            previousPrivacyMode.current = isPrivacyMode;
+        }
+    }, [isPrivacyMode, disablePrivacy]);
+
+    const handleFlip = () => {
+        if (disablePrivacy) return;
+        hasInteracted.current = true;
+        setIsFlipped(!isFlipped);
+    };
+
+    const cardVariants = {
+        hidden: { opacity: 0, scale: 0.95, y: 10 },
+        visible: {
+            opacity: 1,
+            scale: 1,
+            y: 0,
+            transition: {
+                duration: 0.5,
+                ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+            }
+        }
+    };
+
+    const renderCardContent = (isBack: boolean = false) => (
         <Card className={cn(
-            "group border rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden relative",
+            "group border rounded-2xl sm:rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden relative h-full w-full",
             style.bg,
             style.border,
             theme !== "slate" && "hover:shadow-violet-500/5",
@@ -95,56 +139,131 @@ export function StatCard({
                 style.glow
             )} />
 
-            <CardContent className={cn("p-6", compact && "p-4 sm:p-6")}>
-                <div className={cn("flex items-start justify-between gap-4", compact && "flex-col sm:flex-row")}>
-                    <div className="space-y-3 flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                            <p className={cn(
-                                "text-[10px] font-bold uppercase tracking-[0.1em] truncate",
-                                style.label,
-                                labelDesktop ? (compact ? "" : "sm:hidden") : ""
-                            )}>
-                                {label}
-                            </p>
-                            {labelDesktop && (
-                                <p className={cn(
-                                    "text-[10px] font-bold uppercase tracking-[0.1em] hidden sm:block truncate",
-                                    style.label
-                                )}>
-                                    {labelDesktop}
-                                </p>
-                            )}
-                        </div>
-
-                        <div className="space-y-1">
-                            <p className={cn(
-                                "text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-none",
-                                compact && "text-lg sm:text-2xl"
-                            )}>
-                                {value}
-                            </p>
-                            {trend && (
-                                <div className={cn(
-                                    "inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold",
-                                    trend.positive ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10" : "bg-red-50 text-red-500 dark:bg-red-500/10"
-                                )}>
-                                    <span className="mr-0.5">{trend.positive ? "↑" : "↓"}</span>
-                                    {trend.value}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
+            {isBack ? (
+                <CardContent className={cn("p-4 sm:p-6 flex flex-col items-center justify-center h-full min-h-[120px] sm:min-h-[140px] text-center gap-3", compact && "p-3 sm:p-6")}>
                     <div className={cn(
-                        "shrink-0 p-3.5 rounded-2xl transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-sm group-hover:shadow-md",
+                        "p-2.5 sm:p-3 rounded-2xl transition-all duration-500 opacity-60",
                         style.iconContainer,
-                        iconColor, // Allow override if needed
-                        compact && "p-2 sm:p-3.5 hidden sm:flex"
+                        iconColor
                     )}>
-                        <Icon className={cn("w-5 h-5", compact && "w-4 h-4 sm:w-5 sm:h-5")} />
+                        <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
                     </div>
-                </div>
-            </CardContent>
+                    <p className={cn(
+                        "text-[10px] sm:text-xs font-bold uppercase tracking-[0.15em] opacity-80",
+                        style.label
+                    )}>
+                        {labelDesktop || label}
+                    </p>
+                    <div className="w-8 h-1 rounded-full bg-slate-200/50 dark:bg-slate-700/50 mt-1" />
+                </CardContent>
+            ) : (
+                <CardContent className={cn("p-4 sm:p-6", compact && "p-3 sm:p-6 flex items-center justify-center h-full")}>
+                    <div className={cn(
+                        "flex items-start justify-between gap-3 sm:gap-4 w-full",
+                        compact && "flex-col items-center justify-center text-center sm:flex-row sm:items-start sm:justify-between sm:text-left"
+                    )}>
+                        <div className={cn("space-y-2 sm:space-y-3 flex-1 min-w-0", compact && "flex flex-col items-center sm:block")}>
+                            <div className="flex items-center gap-2">
+                                <p className={cn(
+                                    "text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.1em] truncate",
+                                    style.label,
+                                    labelDesktop ? (compact ? "" : "sm:hidden") : ""
+                                )}>
+                                    {label}
+                                </p>
+                                {labelDesktop && (
+                                    <p className={cn(
+                                        "text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.1em] hidden sm:block truncate",
+                                        style.label
+                                    )}>
+                                        {labelDesktop}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="space-y-1">
+                                <motion.p
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: 0.2, duration: 0.5 }}
+                                    className={cn(
+                                        "text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-none",
+                                        compact && "text-2xl sm:text-2xl"
+                                    )}
+                                >
+                                    {value}
+                                </motion.p>
+                                {trend && (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.8 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{ delay: 0.3, duration: 0.4 }}
+                                        className={cn(
+                                            "inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold",
+                                            trend.positive ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10" : "bg-red-50 text-red-500 dark:bg-red-500/10"
+                                        )}
+                                    >
+                                        <span className="mr-0.5">{trend.positive ? "↑" : "↓"}</span>
+                                        {trend.value}
+                                    </motion.div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className={cn(
+                            "shrink-0 p-3 sm:p-3.5 rounded-2xl transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-sm group-hover:shadow-md",
+                            style.iconContainer,
+                            iconColor,
+                            compact ? "p-2 sm:p-3.5 hidden sm:flex" : "hidden sm:flex"
+                        )}>
+                            <Icon className={cn("w-4 h-4 sm:w-5 sm:h-5")} />
+                        </div>
+                    </div>
+                </CardContent>
+            )}
         </Card>
+    );
+
+    return (
+        <div
+            className={cn("perspective-1000 h-full w-full", !disablePrivacy && "cursor-pointer")}
+            onClick={handleFlip}
+            style={{ perspective: "1000px" }}
+        >
+            <motion.div
+                variants={cardVariants}
+                className={cn("relative w-full h-full min-h-[140px]", compact && "min-h-[100px] sm:min-h-[140px]")}
+                style={{
+                    transformStyle: "preserve-3d",
+                    transition: "transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)"
+                }}
+                initial={{ rotateY: isFlipped ? 180 : 0 }}
+                animate={{ rotateY: isFlipped ? 180 : 0 }}
+            >
+                {/* Front Side */}
+                <div
+                    className="absolute inset-0 w-full h-full"
+                    style={{ backfaceVisibility: "hidden" }}
+                >
+                    {renderCardContent(false)}
+                </div>
+
+                {/* Back Side (Privacy) */}
+                <div
+                    className="absolute inset-0 w-full h-full"
+                    style={{
+                        backfaceVisibility: "hidden",
+                        transform: "rotateY(180deg)"
+                    }}
+                >
+                    {renderCardContent(true)}
+                </div>
+
+                {/* Invisible structural content to give parent height */}
+                <div className="opacity-0 pointer-events-none w-full h-full">
+                    {renderCardContent(false)}
+                </div>
+            </motion.div>
+        </div>
     );
 }

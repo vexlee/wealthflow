@@ -45,13 +45,13 @@ export function MonthlyTrend({ transactions, month }: MonthlyTrendProps) {
     }, [transactions, month]);
 
     return (
-        <div className="group bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-[2rem] shadow-sm p-6 lg:p-8 flex flex-col h-[450px] hover:shadow-2xl hover:shadow-slate-200/50 dark:hover:shadow-black/20 transition-all duration-500 overflow-hidden relative">
+        <div className="group bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl sm:rounded-[2rem] shadow-sm p-4 sm:p-6 lg:p-8 flex flex-col h-[350px] sm:h-[450px] hover:shadow-2xl hover:shadow-slate-200/50 dark:hover:shadow-black/20 transition-all duration-500 overflow-hidden relative">
             {/* Subtle Gradient Glow */}
             <div className="absolute top-0 left-0 w-64 h-64 bg-gradient-to-br from-indigo-50/50 to-transparent dark:from-indigo-900/10 opacity-50 pointer-events-none" />
 
-            <div className="relative z-10 mb-6">
-                <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Cash Flow Trend</h2>
-                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Daily income vs expenses overview</p>
+            <div className="relative z-10 mb-4 sm:mb-6">
+                <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight">Cash Flow Trend</h2>
+                <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5 sm:mt-1">Daily income vs expenses overview</p>
             </div>
 
             <div className={`flex-1 min-h-0 ${isPrivacyMode ? "blur-xl opacity-30 grayscale pointer-events-none" : ""}`}>

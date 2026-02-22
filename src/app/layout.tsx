@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AppProviders } from "@/components/providers";
+import { AnimationProvider } from "@/components/shared/animation-provider";
 import "./globals.css";
 
 const inter = Inter({
@@ -42,7 +43,9 @@ export default function RootLayout({
       <body className={`${inter.variable} font-sans antialiased`}>
         <ThemeProvider>
           <AppProviders>
-            {children}
+            <AnimationProvider>
+              {children}
+            </AnimationProvider>
           </AppProviders>
           <Toaster richColors position="top-right" />
         </ThemeProvider>
