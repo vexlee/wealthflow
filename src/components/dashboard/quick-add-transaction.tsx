@@ -126,6 +126,13 @@ export function QuickAddTransaction({
 
         setSaving(true);
 
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            toast.error("Not authenticated");
+            setSaving(false);
+            return;
+        }
+
         const dateStr = selectedDate.toISOString().split("T")[0];
 
         const { error } = await supabase.from("transactions").insert({
@@ -134,6 +141,7 @@ export function QuickAddTransaction({
             category_id: selectedCategoryId,
             wallet_id: activeWalletId,
             date: dateStr,
+            user_id: user.id,
         });
 
         setSaving(false);
