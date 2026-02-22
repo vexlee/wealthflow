@@ -89,7 +89,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
             if (user) {
                 await supabase
                     .from('profiles')
-                    .upsert({ id: user.id, theme: newTheme });
+                    .update({ theme: newTheme })
+                    .eq('id', user.id);
             }
         };
         updateProfile();

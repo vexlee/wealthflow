@@ -318,6 +318,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_wallet_with_member: {
+        Args: {
+          p_color: string
+          p_currency_code: string
+          p_icon: string
+          p_name: string
+          p_owner_id: string
+          p_type: string
+        }
+        Returns: string
+      }
       process_recurring_transactions: { Args: never; Returns: undefined }
     }
     Enums: {

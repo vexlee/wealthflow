@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 
 interface PrivacyContextType {
     isPrivacyMode: boolean;
@@ -15,15 +16,6 @@ export function PrivacyProvider({ children }: { children: React.ReactNode }) {
     const [isLoaded, setIsLoaded] = useState(false);
 
     useEffect(() => {
-        // Load from local storage first for immediate UI feedback
-        const storedPrivacy = localStorage.getItem("wealthflow-privacy-mode");
-        if (storedPrivacy) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setIsPrivacyMode(storedPrivacy === "true");
-        }
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setIsLoaded(true);
-
         // Fetch from Supabase
         const fetchProfile = async () => {
             const supabase = createClient();
@@ -37,33 +29,39 @@ export function PrivacyProvider({ children }: { children: React.ReactNode }) {
 
                 if (profile && profile.is_privacy_mode !== null) {
                     setIsPrivacyMode(profile.is_privacy_mode);
-                    // Sync local storage to match cloud
-                    localStorage.setItem("wealthflow-privacy-mode", String(profile.is_privacy_mode));
                 }
             }
+            // Mark loaded after attempt
+            setIsLoaded(true);
         };
         fetchProfile();
     }, []);
 
     const togglePrivacyMode = () => {
-        setIsPrivacyMode((prev) => {
-            const newValue = !prev;
-            localStorage.setItem("wealthflow-privacy-mode", String(newValue));
+        const previousValue = isPrivacyMode;
+        const newValue = !previousValue;
 
-            // Sync with Supabase
-            const updateProfile = async () => {
-                const supabase = createClient();
-                const { data: { user } } = await supabase.auth.getUser();
-                if (user) {
-                    await supabase
-                        .from('profiles')
-                        .upsert({ id: user.id, is_privacy_mode: newValue });
+        // Optimistic update
+        setIsPrivacyMode(newValue);
+
+        // Sync with Supabase
+        const updateProfile = async () => {
+            const supabase = createClient();
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { error } = await supabase
+                    .from('profiles')
+                    .update({ is_privacy_mode: newValue })
+                    .eq('id', user.id);
+
+                if (error) {
+                    // Rollback on failure
+                    setIsPrivacyMode(previousValue);
+                    toast.error("Failed to save privacy preference");
                 }
-            };
-            updateProfile();
-
-            return newValue;
-        });
+            }
+        };
+        updateProfile();
     };
 
     return (

@@ -174,9 +174,13 @@ function TransactionsContent() {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
                 const currentFilters = { filterType, filterWallet };
-                await supabase
+                const { error } = await supabase
                     .from("profiles")
-                    .upsert({ id: user.id, transaction_filters: currentFilters as any });
+                    .update({ transaction_filters: currentFilters as any })
+                    .eq('id', user.id);
+                if (error) {
+                    toast.error("Failed to save transaction filters");
+                }
             }
         }, 1000); // 1 second debounce
 

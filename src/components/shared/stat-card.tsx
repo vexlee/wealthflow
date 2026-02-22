@@ -17,6 +17,7 @@ interface StatCardProps {
     maskedValue?: string;
     isPrivacyDelayed?: boolean;
     disablePrivacy?: boolean;
+    chartData?: number[];
 }
 
 const themeStyles = {
@@ -87,7 +88,8 @@ export function StatCard({
     compact,
     theme = "slate",
     isPrivacyDelayed = false,
-    disablePrivacy = false
+    disablePrivacy = false,
+    chartData
 }: StatCardProps) {
     const style = themeStyles[theme];
     const { isPrivacyMode } = usePrivacy();
@@ -149,7 +151,7 @@ export function StatCard({
                         <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
                     </div>
                     <p className={cn(
-                        "text-[10px] sm:text-xs font-bold uppercase tracking-[0.15em] opacity-80",
+                        "text-xs sm:text-sm font-bold uppercase tracking-[0.15em] opacity-80",
                         style.label
                     )}>
                         {labelDesktop || label}
@@ -158,6 +160,34 @@ export function StatCard({
                 </CardContent>
             ) : (
                 <CardContent className={cn("p-4 sm:p-6", compact && "p-3 sm:p-6 flex items-center justify-center h-full")}>
+                    {/* Sparkline Overlay for background feel */}
+                    {chartData && chartData.length > 1 && !compact && (
+                        <div className="absolute bottom-0 right-0 left-0 h-12 opacity-[0.08] dark:opacity-[0.12] pointer-events-none">
+                            <svg viewBox="0 0 100 40" className="w-full h-full preserve-3d" preserveAspectRatio="none">
+                                <motion.path
+                                    d={(() => {
+                                        const min = Math.min(...chartData);
+                                        const max = Math.max(...chartData);
+                                        const range = max - min || 1;
+                                        return chartData.map((val, i) => {
+                                            const x = (i / (chartData.length - 1)) * 100;
+                                            const y = 40 - ((val - min) / range) * 35 - 2;
+                                            return `${i === 0 ? "M" : "L"} ${x} ${y}`;
+                                        }).join(" ");
+                                    })()}
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="3"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    initial={{ pathLength: 0, opacity: 0 }}
+                                    animate={{ pathLength: 1, opacity: 1 }}
+                                    transition={{ duration: 1.5, ease: "easeInOut" }}
+                                />
+                            </svg>
+                        </div>
+                    )}
+
                     <div className={cn(
                         "flex items-start justify-between gap-3 sm:gap-4 w-full",
                         compact && "flex-col items-center justify-center text-center sm:flex-row sm:items-start sm:justify-between sm:text-left"
@@ -165,7 +195,7 @@ export function StatCard({
                         <div className={cn("space-y-2 sm:space-y-3 flex-1 min-w-0", compact && "flex flex-col items-center sm:block")}>
                             <div className="flex items-center gap-2">
                                 <p className={cn(
-                                    "text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.1em] truncate",
+                                    "text-[11px] sm:text-xs font-bold uppercase tracking-[0.1em] truncate",
                                     style.label,
                                     labelDesktop ? (compact ? "" : "sm:hidden") : ""
                                 )}>
@@ -173,7 +203,7 @@ export function StatCard({
                                 </p>
                                 {labelDesktop && (
                                     <p className={cn(
-                                        "text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.1em] hidden sm:block truncate",
+                                        "text-[11px] sm:text-xs font-bold uppercase tracking-[0.1em] hidden sm:block truncate",
                                         style.label
                                     )}>
                                         {labelDesktop}
@@ -181,25 +211,61 @@ export function StatCard({
                                 )}
                             </div>
 
-                            <div className="space-y-1">
+                            <div className="flex items-center space-x-2">
                                 <motion.p
                                     initial={{ opacity: 0, x: -10 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: 0.2, duration: 0.5 }}
                                     className={cn(
-                                        "text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-none",
-                                        compact && "text-2xl sm:text-2xl"
+                                        "text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight leading-none",
+                                        compact && "text-2xl sm:text-3xl"
                                     )}
                                 >
                                     {value}
                                 </motion.p>
+
+                                {chartData && chartData.length > 1 && (
+                                    <div className="flex items-center h-8 ml-1">
+                                        <svg viewBox="0 0 60 24" className="w-12 sm:w-16 h-6 overflow-visible">
+                                            <motion.path
+                                                d={(() => {
+                                                    const min = Math.min(...chartData);
+                                                    const max = Math.max(...chartData);
+                                                    const range = max - min || 1;
+                                                    return chartData.map((val, i) => {
+                                                        const x = (i / (chartData.length - 1)) * 60;
+                                                        const y = 24 - ((val - min) / range) * 20 - 2;
+                                                        return `${i === 0 ? "M" : "L"} ${x} ${y}`;
+                                                    }).join(" ");
+                                                })()}
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="2.5"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                className={cn(
+                                                    theme === "emerald" ? "text-emerald-500" :
+                                                        theme === "rose" ? "text-rose-500" :
+                                                            theme === "indigo" ? "text-indigo-500" :
+                                                                theme === "amber" ? "text-amber-500" :
+                                                                    theme === "sky" ? "text-sky-500" :
+                                                                        theme === "violet" ? "text-violet-500" :
+                                                                            "text-slate-400"
+                                                )}
+                                                initial={{ pathLength: 0, opacity: 0 }}
+                                                animate={{ pathLength: 1, opacity: 1 }}
+                                                transition={{ duration: 1, delay: 0.4 }}
+                                            />
+                                        </svg>
+                                    </div>
+                                )}
                                 {trend && (
                                     <motion.div
                                         initial={{ opacity: 0, scale: 0.8 }}
                                         animate={{ opacity: 1, scale: 1 }}
                                         transition={{ delay: 0.3, duration: 0.4 }}
                                         className={cn(
-                                            "inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold",
+                                            "inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold",
                                             trend.positive ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10" : "bg-red-50 text-red-500 dark:bg-red-500/10"
                                         )}
                                     >

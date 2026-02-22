@@ -23,6 +23,7 @@ import {
     DollarSign,
     Settings2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Onboarding } from "@/components/shared/onboarding";
 import { CustomizeDashboardModal, DashboardSectionConfig, DEFAULT_DASHBOARD_CONFIG } from "@/components/dashboard/customize-modal";
 import { MetricsSettingsModal, DashboardMetricsConfig, DEFAULT_METRICS_CONFIG } from "@/components/dashboard/metrics-settings-modal";
@@ -51,6 +52,19 @@ export default function DashboardPage() {
     const [monthTransactions, setMonthTransactions] = useState<TransactionWithCategory[]>([]);
     const [spendingByCategory, setSpendingByCategory] = useState<{ id: string; label: string; value: number; color: string }[]>([]);
     const [cashFlowData, setCashFlowData] = useState<{ id: string; data: { x: string; y: number }[] }[]>([]);
+    const [metricTrends, setMetricTrends] = useState<{
+        netWorth: number[];
+        income: number[];
+        expenses: number[];
+        balance: number[];
+        dailyBudget: number[];
+    }>({
+        netWorth: [],
+        income: [],
+        expenses: [],
+        balance: [],
+        dailyBudget: []
+    });
     const [loading, setLoading] = useState(true);
     const [showOnboarding, setShowOnboarding] = useState(false);
     const [allCategories, setAllCategories] = useState<Category[]>([]);
@@ -59,43 +73,19 @@ export default function DashboardPage() {
 
     // Layout customization state
     const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
-    const [layoutConfig, setLayoutConfig] = useState<DashboardSectionConfig[]>([]);
+    const [layoutConfig, setLayoutConfig] = useState<DashboardSectionConfig[]>(DEFAULT_DASHBOARD_CONFIG);
     const [isLayoutLoaded, setIsLayoutLoaded] = useState(false);
 
     // Metrics customization state
     const [isMetricsModalOpen, setIsMetricsModalOpen] = useState(false);
     const [metricsConfig, setMetricsConfig] = useState<DashboardMetricsConfig>(DEFAULT_METRICS_CONFIG);
 
-    // Initialize layout and metrics from localStorage and Supabase
+    // Onboarding config
+    const [hasOnboarded, setHasOnboarded] = useState(true);
+
+    // Initialize layout and metrics from Supabase directly
     useEffect(() => {
-        const loadInitialConfigs = async () => {
-            // First try local storage for immediate load
-            const savedLayout = localStorage.getItem("wealthflow-dashboard-layout");
-            if (savedLayout) {
-                try {
-                    setLayoutConfig(JSON.parse(savedLayout));
-                } catch (e) {
-                    console.error("Failed to parse saved layout:", e);
-                    setLayoutConfig(DEFAULT_DASHBOARD_CONFIG);
-                }
-            } else {
-                setLayoutConfig(DEFAULT_DASHBOARD_CONFIG);
-            }
-
-            const savedMetrics = localStorage.getItem("wealthflow-dashboard-metrics");
-            if (savedMetrics) {
-                try {
-                    setMetricsConfig(JSON.parse(savedMetrics));
-                } catch (e) {
-                    console.error("Failed to parse saved metrics:", e);
-                    setMetricsConfig(DEFAULT_METRICS_CONFIG);
-                }
-            } else {
-                setMetricsConfig(DEFAULT_METRICS_CONFIG);
-            }
-            setIsLayoutLoaded(true);
-
-            // Fetch from Supabase and override if available
+        const loadConfigs = async () => {
             try {
                 const { data: { user } } = await supabase.auth.getUser();
                 if (user) {
@@ -107,45 +97,45 @@ export default function DashboardPage() {
 
                     if (profile) {
                         if (profile.dashboard_layout) {
-                            const layout = profile.dashboard_layout as unknown as DashboardSectionConfig[];
-                            setLayoutConfig(layout);
-                            localStorage.setItem("wealthflow-dashboard-layout", JSON.stringify(layout));
+                            setLayoutConfig(profile.dashboard_layout as unknown as DashboardSectionConfig[]);
                         }
                         if (profile.dashboard_metrics) {
-                            const metrics = profile.dashboard_metrics as unknown as DashboardMetricsConfig;
-                            setMetricsConfig(metrics);
-                            localStorage.setItem("wealthflow-dashboard-metrics", JSON.stringify(metrics));
+                            setMetricsConfig(profile.dashboard_metrics as unknown as DashboardMetricsConfig);
                         }
-                        if (profile.has_onboarded) {
-                            localStorage.setItem("wealthflow-onboarded", "true");
-                        }
+                        setHasOnboarded(!!profile.has_onboarded);
                     }
                 }
             } catch (error) {
                 console.error("Failed to fetch dashboard configs from Supabase", error);
+            } finally {
+                setIsLayoutLoaded(true);
             }
         };
 
-        loadInitialConfigs();
+        loadConfigs();
     }, [supabase]);
 
     const handleSaveLayout = async (newConfig: DashboardSectionConfig[]) => {
         setLayoutConfig(newConfig);
-        localStorage.setItem("wealthflow-dashboard-layout", JSON.stringify(newConfig));
 
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-            await supabase.from('profiles').upsert({ id: user.id, dashboard_layout: newConfig as any });
+            const { error } = await supabase.from('profiles').update({ dashboard_layout: newConfig as any }).eq('id', user.id);
+            if (error) {
+                toast.error("Failed to save dashboard layout preferences");
+            }
         }
     };
 
     const handleSaveMetrics = async (newConfig: DashboardMetricsConfig) => {
         setMetricsConfig(newConfig);
-        localStorage.setItem("wealthflow-dashboard-metrics", JSON.stringify(newConfig));
 
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-            await supabase.from('profiles').upsert({ id: user.id, dashboard_metrics: newConfig as any });
+            const { error } = await supabase.from('profiles').update({ dashboard_metrics: newConfig as any }).eq('id', user.id);
+            if (error) {
+                toast.error("Failed to save dashboard metrics preferences");
+            }
         }
     };
 
@@ -230,6 +220,56 @@ export default function DashboardPage() {
             { id: "Expenses", data: expenseData },
         ]);
 
+        // Calculate Sparkline Trends
+        const netWorthHistory: number[] = [];
+        let runningNetWorth = netWorth;
+
+        // Group all transactions by date for faster lookup
+        const txByDate = allTransactions.reduce((acc, t) => {
+            const txDate = t.date || "unknown";
+            if (!acc[txDate]) acc[txDate] = [];
+            acc[txDate].push(t);
+            return acc;
+        }, {} as Record<string, TransactionWithCategory[]>);
+
+        // Calculate net worth backwards
+        [...last30].reverse().forEach((dateStr) => {
+            netWorthHistory.unshift(runningNetWorth);
+            const dayTxs = txByDate[dateStr] || [];
+            dayTxs.forEach(t => {
+                const amount = getFiatAmount(t.amount, t.wallet_id);
+                runningNetWorth -= (t.type === 'income' ? amount : -amount);
+            });
+        });
+
+        // Daily Balance Trend (Cumulative for the last 30 days)
+        let runningBalance = 0;
+        const balanceHistory = last30.map(dateStr => {
+            const dayTxs = txByDate[dateStr] || [];
+            const dayNet = dayTxs.reduce((sum, t) => {
+                const amount = getFiatAmount(t.amount, t.wallet_id);
+                return sum + (t.type === 'income' ? amount : -amount);
+            }, 0);
+            runningBalance += dayNet;
+            return runningBalance;
+        });
+
+        // Daily Budget Trend (Spent per day)
+        const budgetHistory = last30.map(dateStr => {
+            const dayTxs = txByDate[dateStr] || [];
+            return dayTxs
+                .filter(t => t.type === 'expense')
+                .reduce((sum, t) => sum + getFiatAmount(t.amount, t.wallet_id), 0);
+        });
+
+        setMetricTrends({
+            netWorth: netWorthHistory,
+            income: incomeData.map(d => d.y),
+            expenses: expenseData.map(d => d.y),
+            balance: balanceHistory,
+            dailyBudget: budgetHistory
+        });
+
         const budgetsWithSpent = budgets.map((b) => {
             const spent = monthTransactions
                 .filter((t) => t.type === "expense" && t.category_id === b.category_id)
@@ -310,13 +350,10 @@ export default function DashboardPage() {
 
     // Show onboarding for first-time users
     useEffect(() => {
-        if (!loading && wallets.length === 0) {
-            const onboarded = localStorage.getItem("wealthflow-onboarded");
-            if (!onboarded) {
-                setShowOnboarding(true);
-            }
+        if (!loading && isLayoutLoaded && wallets.length === 0 && !hasOnboarded) {
+            setShowOnboarding(true);
         }
-    }, [loading, wallets.length]);
+    }, [loading, isLayoutLoaded, wallets.length, hasOnboarded]);
 
     // Listen for FAB quick-add event
     useEffect(() => {
@@ -479,6 +516,7 @@ export default function DashboardPage() {
                                                         maskedValue={maskValue(netWorth)}
                                                         icon={DollarSign}
                                                         theme="indigo"
+                                                        chartData={metricTrends.netWorth}
                                                     />
                                                 )}
                                                 {metricsConfig.visibleCards.income && (
@@ -488,6 +526,7 @@ export default function DashboardPage() {
                                                         maskedValue={maskValue(monthlyIncome)}
                                                         icon={TrendingUp}
                                                         theme="emerald"
+                                                        chartData={metricTrends.income}
                                                     />
                                                 )}
                                                 {metricsConfig.visibleCards.expenses && (
@@ -497,6 +536,7 @@ export default function DashboardPage() {
                                                         maskedValue={maskValue(monthlyExpenses)}
                                                         icon={TrendingDown}
                                                         theme="rose"
+                                                        chartData={metricTrends.expenses}
                                                     />
                                                 )}
                                                 {metricsConfig.visibleCards.balance && (
@@ -506,6 +546,7 @@ export default function DashboardPage() {
                                                         maskedValue={maskValue(monthlyIncome - monthlyExpenses)}
                                                         icon={ArrowLeftRight}
                                                         theme={monthlyIncome - monthlyExpenses >= 0 ? "emerald" : "rose"}
+                                                        chartData={metricTrends.balance}
                                                     />
                                                 )}
                                                 {metricsConfig.visibleCards.dailyBudget && (
@@ -515,6 +556,7 @@ export default function DashboardPage() {
                                                         maskedValue={dailySuggested > 0 ? maskValue(dailySuggested) : "—"}
                                                         icon={PiggyBank}
                                                         theme="amber"
+                                                        chartData={metricTrends.dailyBudget}
                                                     />
                                                 )}
                                             </div>

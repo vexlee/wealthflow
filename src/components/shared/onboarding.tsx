@@ -67,31 +67,19 @@ export function Onboarding({ onComplete }: OnboardingProps) {
             return;
         }
 
-        const { data: wallet, error } = await supabase
-            .from("wallets")
-            .insert({
-                name: walletName.trim(),
-                type: "manual",
-                currency_code: "USD",
-                icon: walletIcon,
-                color: walletColor,
-                owner_id: user.id,
-            })
-            .select()
-            .single();
+        const { error } = await supabase.rpc("create_wallet_with_member", {
+            p_name: walletName.trim(),
+            p_type: "manual",
+            p_currency_code: "USD",
+            p_icon: walletIcon,
+            p_color: walletColor,
+            p_owner_id: user.id,
+        });
 
         if (error) {
             toast.error("Failed to create wallet");
             setSaving(false);
             return;
-        }
-
-        if (wallet) {
-            await supabase.from("wallet_members").insert({
-                wallet_id: wallet.id,
-                user_id: user.id,
-                role: "owner",
-            });
         }
 
         toast.success("Wallet created!");
@@ -107,10 +95,10 @@ export function Onboarding({ onComplete }: OnboardingProps) {
         if (user) {
             await supabase
                 .from("profiles")
-                .upsert({ id: user.id, has_onboarded: true });
+                .update({ has_onboarded: true })
+                .eq('id', user.id);
         }
 
-        localStorage.setItem("wealthflow-onboarded", "true"); // keep as fallback
         onComplete();
     };
 
@@ -126,8 +114,8 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                         <div
                             key={i}
                             className={`h-1 flex-1 rounded-full transition-all duration-300 ${i <= step
-                                    ? "bg-violet-500"
-                                    : "bg-slate-200 dark:bg-slate-700"
+                                ? "bg-violet-500"
+                                : "bg-slate-200 dark:bg-slate-700"
                                 }`}
                         />
                     ))}
@@ -209,8 +197,8 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                                             key={ic}
                                             onClick={() => setWalletIcon(ic)}
                                             className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-all ${walletIcon === ic
-                                                    ? "bg-violet-100 dark:bg-violet-500/20 ring-2 ring-violet-500 scale-110"
-                                                    : "bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700"
+                                                ? "bg-violet-100 dark:bg-violet-500/20 ring-2 ring-violet-500 scale-110"
+                                                : "bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700"
                                                 }`}
                                         >
                                             {ic}
@@ -229,8 +217,8 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                                             key={c}
                                             onClick={() => setWalletColor(c)}
                                             className={`w-8 h-8 rounded-full transition-all ${walletColor === c
-                                                    ? "ring-2 ring-slate-900 dark:ring-slate-100 scale-110"
-                                                    : "hover:scale-105"
+                                                ? "ring-2 ring-slate-900 dark:ring-slate-100 scale-110"
+                                                : "hover:scale-105"
                                                 }`}
                                             style={{ backgroundColor: c }}
                                         />

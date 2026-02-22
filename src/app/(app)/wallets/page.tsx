@@ -145,23 +145,18 @@ export default function WalletsPage() {
             }
         } else {
             const { data: { user } } = await supabase.auth.getUser();
-            const { data: wallet, error } = await supabase
-                .from("wallets")
-                .insert({ name, type, currency_code: walletCurrency, icon, color, owner_id: user?.id })
-                .select()
-                .single();
+            const { error } = await supabase.rpc("create_wallet_with_member", {
+                p_name: name,
+                p_type: type,
+                p_currency_code: walletCurrency,
+                p_icon: icon,
+                p_color: color,
+                p_owner_id: user?.id ?? "",
+            });
 
             if (error) {
                 toast.error("Failed to create wallet");
             } else {
-                // Add user as owner in wallet_members
-                if (wallet && user) {
-                    await supabase.from("wallet_members").insert({
-                        wallet_id: wallet.id,
-                        user_id: user.id,
-                        role: "owner",
-                    });
-                }
                 toast.success("Wallet created");
             }
         }

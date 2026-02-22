@@ -1,13 +1,13 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 
 interface CurrencyContextValue {
     currency: string;
     setCurrency: (code: string) => void;
 }
-
-import { createClient } from "@/lib/supabase/client";
 
 const CurrencyContext = createContext<CurrencyContextValue>({
     currency: "USD",
@@ -18,9 +18,6 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
     const [currency, setCurrencyState] = useState("USD");
 
     useEffect(() => {
-        const saved = localStorage.getItem("wealthflow-currency");
-        if (saved) setCurrencyState(saved);
-
         const fetchProfile = async () => {
             const supabase = createClient();
             const { data: { user } } = await supabase.auth.getUser();
@@ -33,7 +30,6 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
 
                 if (profile && profile.currency) {
                     setCurrencyState(profile.currency);
-                    localStorage.setItem("wealthflow-currency", profile.currency);
                 }
             }
         };
@@ -41,16 +37,24 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     const setCurrency = (code: string) => {
+        // Optimistic update — save previous value for rollback
+        const previousCurrency = currency;
         setCurrencyState(code);
-        localStorage.setItem("wealthflow-currency", code);
 
         const updateProfile = async () => {
             const supabase = createClient();
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
-                await supabase
+                const { error } = await supabase
                     .from('profiles')
-                    .upsert({ id: user.id, currency: code });
+                    .update({ currency: code })
+                    .eq('id', user.id);
+
+                if (error) {
+                    // Rollback on failure
+                    setCurrencyState(previousCurrency);
+                    toast.error("Failed to save currency preference");
+                }
             }
         };
         updateProfile();

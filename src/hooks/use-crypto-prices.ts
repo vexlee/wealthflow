@@ -1,14 +1,19 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import type { Wallet } from "@/types/database";
 
-// Simple cache to avoid spamming the free CoinGecko API
-let globalPricesCache: Record<string, number> = {};
-let lastFetchTime = 0;
+// Shared cache with keyed entries to prevent race conditions
+const priceCache = new Map<string, { price: number; timestamp: number }>();
 const CACHE_DURATION = 60 * 1000; // 1 minute
 
+// Track in-flight requests to deduplicate concurrent fetches
+let activeRequest: Promise<Record<string, Record<string, number>>> | null = null;
+let activeRequestKey = "";
+
 export function useCryptoPrices(wallets: Wallet[], baseCurrency: string) {
-    const [prices, setPrices] = useState<Record<string, number>>(globalPricesCache);
+    const [prices, setPrices] = useState<Record<string, number>>({});
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const abortRef = useRef<AbortController | null>(null);
 
     useEffect(() => {
         const fetchPrices = async () => {
@@ -23,69 +28,101 @@ export function useCryptoPrices(wallets: Wallet[], baseCurrency: string) {
             const vsCurrency = baseCurrency.toLowerCase();
             const now = Date.now();
 
-            if (now - lastFetchTime < CACHE_DURATION && Object.keys(globalPricesCache).length > 0) {
-                // Check if we have all needed IDs for the current base currency
-                let hasAll = true;
-                for (const id of cryptoIds) {
-                    if (!globalPricesCache[`${id}-${vsCurrency}`]) {
-                        hasAll = false;
-                        break;
-                    }
-                }
-                if (hasAll) {
-                    setPrices(globalPricesCache);
-                    return;
+            // Check cache — only use it if ALL needed entries exist and are fresh
+            const cached: Record<string, number> = {};
+            let allCached = true;
+            for (const id of cryptoIds) {
+                const key = `${id}-${vsCurrency}`;
+                const entry = priceCache.get(key);
+                if (entry && now - entry.timestamp < CACHE_DURATION) {
+                    cached[id as string] = entry.price;
+                } else {
+                    allCached = false;
+                    break;
                 }
             }
 
+            if (allCached) {
+                setPrices(cached);
+                setError(null);
+                return;
+            }
+
+            // Build a request key to deduplicate concurrent fetches
+            const requestKey = `${cryptoIds.sort().join(",")}-${vsCurrency}`;
+
             try {
                 setLoading(true);
-                const response = await fetch(
-                    `https://api.coingecko.com/api/v3/simple/price?ids=${cryptoIds.join(",")}&vs_currencies=${vsCurrency}`
-                );
+                setError(null);
 
-                if (!response.ok) throw new Error("Failed to fetch crypto prices");
+                let data: Record<string, Record<string, number>>;
 
-                const data = await response.json();
+                // Reuse an in-flight request if it matches
+                if (activeRequest && activeRequestKey === requestKey) {
+                    data = await activeRequest;
+                } else {
+                    // Cancel previous in-flight request if it doesn't match
+                    if (abortRef.current) {
+                        abortRef.current.abort();
+                    }
+                    const controller = new AbortController();
+                    abortRef.current = controller;
 
-                const newPrices: Record<string, number> = { ...globalPricesCache };
+                    const fetchPromise = fetch(
+                        `https://api.coingecko.com/api/v3/simple/price?ids=${cryptoIds.join(",")}&vs_currencies=${vsCurrency}`,
+                        { signal: controller.signal }
+                    ).then(async (response) => {
+                        if (!response.ok) throw new Error("Failed to fetch crypto prices");
+                        return response.json();
+                    });
+
+                    activeRequest = fetchPromise;
+                    activeRequestKey = requestKey;
+
+                    data = await fetchPromise;
+
+                    // Clear the active request reference so future fetches start fresh
+                    activeRequest = null;
+                    activeRequestKey = "";
+                }
+
+                const newPrices: Record<string, number> = {};
+                const fetchTimestamp = Date.now();
 
                 for (const id of cryptoIds) {
                     if (data[id as string] && data[id as string][vsCurrency]) {
-                        newPrices[`${id}-${vsCurrency}`] = data[id as string][vsCurrency];
+                        const price = data[id as string][vsCurrency];
+                        newPrices[id as string] = price;
+                        // Update cache per-entry with individual timestamps
+                        priceCache.set(`${id}-${vsCurrency}`, { price, timestamp: fetchTimestamp });
                     }
                 }
 
-                globalPricesCache = newPrices;
-                lastFetchTime = now;
                 setPrices(newPrices);
-            } catch (error) {
-                // Rate limits or CORS issues can throw Failed to fetch
-                console.warn("Error fetching crypto prices (possibly rate limited):", error);
+            } catch (err: unknown) {
+                // Don't treat aborted requests as errors
+                if (err instanceof DOMException && err.name === "AbortError") return;
 
-                // Update fetch time so we don't spam the API on failure
-                lastFetchTime = now;
+                const message = err instanceof Error ? err.message : "Failed to fetch crypto prices";
+                const isRateLimit = message.includes("429") || message.includes("rate");
+                setError(isRateLimit ? "Crypto prices temporarily unavailable (rate limited)" : message);
+
+                // Clear active request on failure
+                activeRequest = null;
+                activeRequestKey = "";
             } finally {
                 setLoading(false);
             }
         };
 
         fetchPrices();
+
+        return () => {
+            if (abortRef.current) {
+                abortRef.current.abort();
+            }
+        };
     }, [wallets, baseCurrency]);
 
-    // Format output: return { "bitcoin": 65000, "ethereum": 3500 } based on the current base currency
-    const currentPrices = useMemo(() => {
-        const result: Record<string, number> = {};
-        const vsCurrency = baseCurrency.toLowerCase();
-
-        for (const key in prices) {
-            if (key.endsWith(`-${vsCurrency}`)) {
-                const id = key.replace(`-${vsCurrency}`, "");
-                result[id] = prices[key];
-            }
-        }
-        return result;
-    }, [prices, baseCurrency]);
-
-    return { prices: currentPrices, loading };
+    return { prices, loading, error };
 }
