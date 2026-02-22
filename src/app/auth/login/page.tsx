@@ -38,11 +38,11 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-violet-50 p-4">
+        <div className="min-h-screen flex items-center justify-center bg-background p-4">
             {/* Background decoration */}
-            <div className="absolute inset-0 overflow-hidden">
-                <div className="absolute -top-40 -right-40 w-80 h-80 bg-violet-200/40 rounded-full blur-3xl" />
-                <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-violet-300/30 rounded-full blur-3xl" />
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute -top-40 -right-40 w-80 h-80 bg-violet-400/20 rounded-full blur-3xl" />
+                <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-accent/20 rounded-full blur-3xl" />
             </div>
 
             <Card className="w-full max-w-md relative z-10 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-slate-200/50 dark:border-slate-800/50 rounded-[2rem] shadow-2xl shadow-violet-500/10 group overflow-hidden">
@@ -50,13 +50,13 @@ export default function LoginPage() {
                 <div className="absolute -top-24 -right-24 w-48 h-48 bg-violet-500/10 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
 
                 <CardHeader className="text-center space-y-4 pt-8">
-                    <div className="mx-auto w-16 h-16 rounded-[2rem] bg-gradient-to-br from-indigo-500 to-violet-700 flex items-center justify-center shadow-xl shadow-violet-500/20 transform transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3 overflow-hidden p-2.5">
-                        <img src="/favicon.ico" alt="WealthFlow Logo" className="w-full h-full object-contain" />
+                    <div className="mx-auto w-16 h-16 rounded-[2rem] bg-gradient-to-br from-violet-400 to-violet-600 flex items-center justify-center shadow-xl shadow-violet-500/20 transform transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3 overflow-hidden p-2.5">
+                        <img src="/favicon.ico" alt="LatteLedger Logo" className="w-full h-full object-contain" />
                     </div>
                     <div>
                         <CardTitle className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Welcome back</CardTitle>
                         <CardDescription className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mt-2">
-                            Sign in to your WealthFlow account
+                            Sign in to your LatteLedger account
                         </CardDescription>
                     </div>
                 </CardHeader>
@@ -94,7 +94,7 @@ export default function LoginPage() {
                         <Button
                             type="submit"
                             disabled={loading}
-                            className="h-12 w-full bg-gradient-to-r from-indigo-600 to-violet-700 hover:from-indigo-500 hover:to-violet-600 text-white rounded-2xl shadow-xl shadow-violet-500/20 transition-all duration-300 font-bold tracking-tight"
+                            className="h-12 w-full bg-gradient-to-r from-violet-400 to-violet-600 border-none text-slate-900 rounded-2xl shadow-xl shadow-violet-500/10 transition-all duration-300 font-bold tracking-tight"
                         >
                             {loading ? (
                                 <Loader2 className="w-5 h-5 animate-spin" />

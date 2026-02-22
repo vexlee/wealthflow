@@ -57,7 +57,7 @@ const themeStyles = {
         label: "text-sky-600/70 dark:text-sky-400/50"
     },
     violet: {
-        bg: "bg-violet-50/30 dark:bg-violet-500/5",
+        bg: "bg-violet-50/50 dark:bg-violet-500/5",
         border: "border-violet-200/50 dark:border-violet-500/20",
         glow: "from-violet-400/20",
         iconContainer: "bg-violet-100/50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400",
@@ -66,8 +66,8 @@ const themeStyles = {
     slate: {
         bg: "bg-white dark:bg-slate-900",
         border: "border-slate-200/80 dark:border-slate-800",
-        glow: "from-slate-50/50 dark:from-slate-800/20",
-        iconContainer: "bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400",
+        glow: "from-slate-100/50 dark:from-slate-800/20",
+        iconContainer: "bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400",
         label: "text-slate-400 dark:text-slate-500"
     }
 };

@@ -29,7 +29,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         setMounted(true);
-        const stored = localStorage.getItem("wealthflow-theme") as Theme | null;
+        const stored = localStorage.getItem("latteledger-theme") as Theme | null;
         if (stored) {
             setThemeState(stored);
         }
@@ -46,7 +46,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
                 if (profile && profile.theme) {
                     setThemeState(profile.theme as Theme);
-                    localStorage.setItem("wealthflow-theme", profile.theme);
+                    localStorage.setItem("latteledger-theme", profile.theme);
                 }
             }
         };
@@ -81,7 +81,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
     const setTheme = (newTheme: Theme) => {
         setThemeState(newTheme);
-        localStorage.setItem("wealthflow-theme", newTheme);
+        localStorage.setItem("latteledger-theme", newTheme);
 
         const updateProfile = async () => {
             const supabase = createClient();

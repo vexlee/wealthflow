@@ -18,7 +18,7 @@ import { toast } from "sonner";
 const STEPS = [
     {
         icon: Sparkles,
-        title: "Welcome to WealthFlow",
+        title: "Welcome to LatteLedger",
         description:
             "Your personal finance tracker. Let's get you set up in under a minute.",
     },
@@ -37,7 +37,7 @@ const STEPS = [
 ];
 
 const WALLET_ICONS = ["💵", "💳", "🏦", "💰", "🪙", "📱"];
-const WALLET_COLORS = ["#7c3aed", "#0891b2", "#10b981", "#f59e0b", "#ef4444", "#ec4899"];
+const WALLET_COLORS = ["#F4B8A5", "#A9D1E1", "#D2A68D", "#FDF2E9", "#ef4444", "#10b981"];
 
 interface OnboardingProps {
     onComplete: () => void;
@@ -48,7 +48,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
     const [step, setStep] = useState(0);
     const [walletName, setWalletName] = useState("");
     const [walletIcon, setWalletIcon] = useState("💵");
-    const [walletColor, setWalletColor] = useState("#7c3aed");
+    const [walletColor, setWalletColor] = useState("#F4B8A5");
     const [saving, setSaving] = useState(false);
 
     const handleCreateWallet = async () => {
@@ -114,7 +114,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                         <div
                             key={i}
                             className={`h-1 flex-1 rounded-full transition-all duration-300 ${i <= step
-                                ? "bg-violet-500"
+                                ? "bg-violet-400"
                                 : "bg-slate-200 dark:bg-slate-700"
                                 }`}
                         />
@@ -123,7 +123,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
 
                 <div className="p-8 text-center">
                     {/* Icon */}
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-violet-500/20">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-400 to-violet-600 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-violet-500/20">
                         <StepIcon className="w-8 h-8 text-white" />
                     </div>
 
@@ -157,7 +157,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                             </div>
                             <Button
                                 onClick={() => setStep(1)}
-                                className="w-full bg-gradient-to-r from-violet-600 to-violet-700 hover:from-violet-500 hover:to-violet-600 text-white shadow-lg shadow-violet-500/20"
+                                className="w-full bg-gradient-to-r from-violet-400 to-violet-600 border-none text-slate-900 shadow-lg shadow-violet-500/20"
                             >
                                 Get Started
                                 <ArrowRight className="w-4 h-4 ml-2" />
@@ -237,7 +237,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                                 <Button
                                     onClick={handleCreateWallet}
                                     disabled={saving || !walletName.trim()}
-                                    className="flex-1 bg-gradient-to-r from-violet-600 to-violet-700 hover:from-violet-500 hover:to-violet-600 text-white"
+                                    className="flex-1 bg-gradient-to-r from-violet-400 to-violet-600 border-none text-slate-900 shadow-none font-bold"
                                 >
                                     {saving ? "Creating..." : "Create Wallet"}
                                 </Button>
@@ -256,7 +256,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                             </p>
                             <Button
                                 onClick={handleFinish}
-                                className="w-full bg-gradient-to-r from-violet-600 to-violet-700 hover:from-violet-500 hover:to-violet-600 text-white shadow-lg shadow-violet-500/20"
+                                className="w-full bg-gradient-to-r from-violet-400 to-violet-600 border-none text-slate-900 shadow-lg shadow-violet-500/20 font-bold"
                             >
                                 Go to Dashboard
                                 <ArrowRight className="w-4 h-4 ml-2" />

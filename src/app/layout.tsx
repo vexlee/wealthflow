@@ -12,7 +12,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "WealthFlow — Budget & Spending Tracker",
+  title: "LatteLedger — Budget & Spending Tracker",
   description:
     "A comprehensive personal finance management tool. Track expenses, set budgets, and visualize your spending habits.",
 };
@@ -30,7 +30,7 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
-                  var theme = localStorage.getItem('wealthflow-theme');
+                  var theme = localStorage.getItem('latteledger-theme');
                   if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                     document.documentElement.classList.add('dark');
                   }

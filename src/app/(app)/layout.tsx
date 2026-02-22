@@ -59,11 +59,11 @@ function SidebarContent({ pathname, onNavigate }: { pathname: string; onNavigate
             {/* Logo */}
             <div className="p-6 pb-4">
                 <Link href="/dashboard" className="flex items-center gap-3 group" onClick={onNavigate}>
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center shadow-lg shadow-violet-500/20 group-hover:shadow-violet-500/40 transition-shadow overflow-hidden p-1.5">
-                        <img src="/favicon.ico" alt="WealthFlow Logo" className="w-full h-full object-contain" />
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-400 to-violet-600 flex items-center justify-center shadow-lg shadow-violet-500/20 group-hover:shadow-violet-500/40 transition-shadow overflow-hidden p-1.5">
+                        <img src="/favicon.ico" alt="LatteLedger Logo" className="w-full h-full object-contain" />
                     </div>
                     <div>
-                        <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">WealthFlow</h1>
+                        <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">LatteLedger</h1>
                         <p className="text-[10px] text-slate-400 uppercase tracking-widest">Finance Tracker</p>
                     </div>
                 </Link>
@@ -129,10 +129,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
     const initials = userEmail
         ? userEmail.substring(0, 2).toUpperCase()
-        : "WF";
+        : "LL";
 
     const currentNavItem = navItems.find(item => pathname === item.href || pathname.startsWith(item.href + "/"));
-    const pageTitle = currentNavItem ? currentNavItem.label : "WealthFlow";
+    const pageTitle = currentNavItem ? currentNavItem.label : "LatteLedger";
 
     return (
         <div className="min-h-screen bg-slate-50/80 dark:bg-slate-950 flex">
@@ -146,7 +146,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         <DropdownMenuTrigger asChild>
                             <button className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left">
                                 <Avatar className="w-8 h-8 border border-slate-200 dark:border-slate-700">
-                                    <AvatarFallback className="bg-gradient-to-br from-violet-500 to-violet-700 text-white text-xs font-semibold">
+                                    <AvatarFallback className="bg-gradient-to-br from-violet-400 to-violet-600 text-slate-900 text-xs font-semibold">
                                         {initials}
                                     </AvatarFallback>
                                 </Avatar>
@@ -191,7 +191,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         {pageTitle}
                     </div>
                     <Avatar className="w-8 h-8 border border-slate-200 dark:border-slate-700">
-                        <AvatarFallback className="bg-gradient-to-br from-violet-500 to-violet-700 text-white text-xs font-semibold">
+                        <AvatarFallback className="bg-gradient-to-br from-violet-400 to-violet-600 text-slate-900 text-xs font-semibold">
                             {initials}
                         </AvatarFallback>
                     </Avatar>
@@ -215,14 +215,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 {pathname === "/dashboard" ? (
                     <button
                         onClick={() => window.dispatchEvent(new CustomEvent("open-quick-add"))}
-                        className="w-14 h-14 rounded-full bg-gradient-to-br from-violet-500 to-violet-700 text-white shadow-lg shadow-violet-500/30 flex items-center justify-center active:scale-90 touch-none transition-transform hover:shadow-violet-500/50"
+                        className="w-14 h-14 rounded-full bg-gradient-to-br from-violet-400 to-violet-600 text-slate-900 shadow-lg shadow-violet-500/30 flex items-center justify-center active:scale-90 touch-none transition-transform hover:shadow-violet-500/50"
                     >
                         <Plus className="w-6 h-6" />
                     </button>
                 ) : (
                     <Link
                         href="/transactions?new=true"
-                        className="w-14 h-14 rounded-full bg-gradient-to-br from-violet-500 to-violet-700 text-white shadow-lg shadow-violet-500/30 flex items-center justify-center active:scale-90 touch-none transition-transform hover:shadow-violet-500/50"
+                        className="w-14 h-14 rounded-full bg-gradient-to-br from-violet-400 to-violet-600 text-slate-900 shadow-lg shadow-violet-500/30 flex items-center justify-center active:scale-90 touch-none transition-transform hover:shadow-violet-500/50"
                     >
                         <Plus className="w-6 h-6" />
                     </Link>

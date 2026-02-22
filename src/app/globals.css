@@ -8,31 +8,31 @@
   /* Theme Overrides for Creamy Beach */
   --color-white: oklch(0.99 0.005 80);
   
-  /* Overriding Violet with Ocean Blue */
-  --color-violet-50: oklch(0.97 0.02 210);
-  --color-violet-100: oklch(0.93 0.04 210);
-  --color-violet-200: oklch(0.88 0.06 210);
-  --color-violet-300: oklch(0.82 0.08 210);
-  --color-violet-400: oklch(0.74 0.10 210);
-  --color-violet-500: oklch(0.65 0.12 210);
-  --color-violet-600: oklch(0.58 0.12 210);
-  --color-violet-700: oklch(0.50 0.12 210);
-  --color-violet-800: oklch(0.42 0.12 210);
-  --color-violet-900: oklch(0.35 0.12 210);
-  --color-violet-950: oklch(0.25 0.12 210);
+  /* Overriding Violet with Muted Peach */
+  --color-violet-50: oklch(0.97 0.02 45);
+  --color-violet-100: oklch(0.94 0.04 45);
+  --color-violet-200: oklch(0.89 0.06 45);
+  --color-violet-300: oklch(0.84 0.08 45);
+  --color-violet-400: oklch(0.80 0.10 45);
+  --color-violet-500: oklch(0.75 0.12 45);
+  --color-violet-600: oklch(0.68 0.12 45);
+  --color-violet-700: oklch(0.60 0.12 45);
+  --color-violet-800: oklch(0.52 0.12 45);
+  --color-violet-900: oklch(0.45 0.12 45);
+  --color-violet-950: oklch(0.35 0.12 45);
 
-  /* Overriding Slate with Warm Sand / Deep Ocean tones */
-  --color-slate-50: oklch(0.97 0.01 80);
-  --color-slate-100: oklch(0.94 0.01 80);
-  --color-slate-200: oklch(0.88 0.02 80);
-  --color-slate-300: oklch(0.80 0.02 80);
-  --color-slate-400: oklch(0.70 0.02 80);
-  --color-slate-500: oklch(0.60 0.02 80);
-  --color-slate-600: oklch(0.50 0.02 80);
-  --color-slate-700: oklch(0.40 0.02 80);
-  --color-slate-800: oklch(0.30 0.02 80);
-  --color-slate-900: oklch(0.22 0.02 240);
-  --color-slate-950: oklch(0.18 0.02 240);
+  /* Overriding Slate with Warm Cream and Dusty Terracotta tones */
+  --color-slate-50: oklch(0.98 0.01 65);
+  --color-slate-100: oklch(0.96 0.02 65);
+  --color-slate-200: oklch(0.92 0.03 65);
+  --color-slate-300: oklch(0.85 0.04 65);
+  --color-slate-400: oklch(0.75 0.05 55);
+  --color-slate-500: oklch(0.65 0.06 55);
+  --color-slate-600: oklch(0.55 0.07 55);
+  --color-slate-700: oklch(0.45 0.08 55);
+  --color-slate-800: oklch(0.35 0.09 55);
+  --color-slate-900: oklch(0.25 0.08 55);
+  --color-slate-950: oklch(0.18 0.07 55);
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -78,37 +78,37 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(0.97 0.01 80);
-  --foreground: oklch(0.25 0.02 80);
-  --card: oklch(0.99 0.005 80);
-  --card-foreground: oklch(0.25 0.02 80);
-  --popover: oklch(0.99 0.005 80);
-  --popover-foreground: oklch(0.25 0.02 80);
-  --primary: oklch(0.65 0.12 210);
-  --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.92 0.02 80);
-  --secondary-foreground: oklch(0.3 0.02 80);
-  --muted: oklch(0.92 0.02 80);
-  --muted-foreground: oklch(0.55 0.02 80);
-  --accent: oklch(0.92 0.02 80);
-  --accent-foreground: oklch(0.3 0.02 80);
+  --background: oklch(0.97 0.02 65); /* Warm Cream */
+  --foreground: oklch(0.35 0.06 55); /* Dusty Terracotta Darkened */
+  --card: oklch(0.99 0.01 65);
+  --card-foreground: oklch(0.35 0.06 55);
+  --popover: oklch(0.99 0.01 65);
+  --popover-foreground: oklch(0.35 0.06 55);
+  --primary: oklch(0.75 0.12 45); /* Muted Peach */
+  --primary-foreground: oklch(0.35 0.06 55);
+  --secondary: oklch(0.94 0.03 65);
+  --secondary-foreground: oklch(0.45 0.08 55);
+  --muted: oklch(0.94 0.03 65);
+  --muted-foreground: oklch(0.55 0.07 55);
+  --accent: oklch(0.83 0.06 215); /* Pastel Blue */
+  --accent-foreground: oklch(0.35 0.06 55);
   --destructive: oklch(0.65 0.15 25);
-  --border: oklch(0.88 0.02 80);
-  --input: oklch(0.88 0.02 80);
-  --ring: oklch(0.65 0.12 210);
-  --chart-1: oklch(0.65 0.12 210);
-  --chart-2: oklch(0.7 0.15 40);
-  --chart-3: oklch(0.75 0.12 80);
-  --chart-4: oklch(0.7 0.1 160);
-  --chart-5: oklch(0.65 0.15 60);
-  --sidebar: oklch(0.95 0.01 80);
-  --sidebar-foreground: oklch(0.25 0.02 80);
-  --sidebar-primary: oklch(0.65 0.12 210);
-  --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.92 0.02 80);
-  --sidebar-accent-foreground: oklch(0.25 0.02 80);
-  --sidebar-border: oklch(0.88 0.02 80);
-  --sidebar-ring: oklch(0.65 0.12 210);
+  --border: oklch(0.88 0.04 55);
+  --input: oklch(0.88 0.04 55);
+  --ring: oklch(0.75 0.12 45);
+  --chart-1: oklch(0.75 0.12 45); /* Muted Peach */
+  --chart-2: oklch(0.83 0.06 215); /* Pastel Blue */
+  --chart-3: oklch(0.72 0.07 55); /* Dusty Terracotta */
+  --chart-4: oklch(0.6 0.1 45);
+  --chart-5: oklch(0.7 0.08 55);
+  --sidebar: oklch(0.96 0.02 65);
+  --sidebar-foreground: oklch(0.35 0.06 55);
+  --sidebar-primary: oklch(0.75 0.12 45);
+  --sidebar-primary-foreground: oklch(0.35 0.06 55);
+  --sidebar-accent: oklch(0.94 0.03 65);
+  --sidebar-accent-foreground: oklch(0.35 0.06 55);
+  --sidebar-border: oklch(0.88 0.04 55);
+  --sidebar-ring: oklch(0.75 0.12 45);
 }
 
 .dark {
