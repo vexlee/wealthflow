@@ -10,9 +10,6 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-    Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose,
-} from "@/components/ui/dialog";
 import { ResponsiveModal } from "@/components/shared/responsive-modal";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,6 +42,7 @@ function TransactionsContent() {
     // Filters
     const [filterType, setFilterType] = useState<string>("all");
     const [filterWallet, setFilterWallet] = useState<string>("all");
+    const [filterMonth, setFilterMonth] = useState<string>(new Date().toISOString().slice(0, 7)); // YYYY-MM
     const [searchQuery, setSearchQuery] = useState("");
     const [filtersLoaded, setFiltersLoaded] = useState(false);
 
@@ -72,7 +70,7 @@ function TransactionsContent() {
     const [transferNote, setTransferNote] = useState("");
     const [transferSaving, setTransferSaving] = useState(false);
 
-    function resetForm() {
+    const resetForm = useCallback(() => {
         setEditId(null);
         setAmount("");
         setType("expense");
@@ -84,12 +82,12 @@ function TransactionsContent() {
         setIsRecurring(false);
         setRecurringType("monthly");
         setNumInstalments("3");
-    }
+    }, [wallets]);
 
-    function openCreate() {
+    const openCreate = useCallback(() => {
         resetForm();
         setDialogOpen(true);
-    }
+    }, [resetForm]);
 
     function openTransfer() {
         setTransferFrom(wallets[0]?.id || "");
@@ -118,34 +116,42 @@ function TransactionsContent() {
         if (loadMore) {
             setLoadingMore(true);
             const offset = transactions.length;
-            const { data: txData } = await supabase
-                .from("transactions").select("*, categories(*), wallets!inner(*)")
+
+            let query = supabase
+                .from("transactions")
+                .select("*, categories(*), wallets!inner(*)")
                 .neq("wallets.type", "crypto")
-                .order("date", { ascending: false }).range(offset, offset + PAGE_SIZE - 1);
+                .order("date", { ascending: false });
+
+            if (filterMonth !== "all") {
+                const startOfMonth = `${filterMonth}-01`;
+                // Add 1 month to the date to get the first day of next month, then subtract 1 day to get the last day.
+                // Or just use JS Date:
+                const [year, month] = filterMonth.split("-").map(Number);
+                const endOfMonth = new Date(year, month, 0).toISOString().split("T")[0]; // Day 0 is last day of previous month, wait, month is 1-indexed here, so month is already next month in JS (0-indexed).
+                // e.g. 2026-02 -> year 2026, month 2. `new Date(2026, 2, 0)` -> last day of Feb.
+                query = query.gte("date", startOfMonth).lte("date", endOfMonth);
+            }
+
+            query = query.range(offset, offset + PAGE_SIZE - 1);
+
+            const { data: txData } = await query;
             const newTx = (txData || []) as TransactionWithCategory[];
             setHasMore(newTx.length === PAGE_SIZE);
             setTransactions((prev) => [...prev, ...newTx]);
             setLoadingMore(false);
         }
-    }, [supabase, transactions.length]);
+    }, [supabase, transactions.length, filterMonth]);
 
     // Initial fetch
     useEffect(() => {
         const init = async () => {
             setLoading(true);
-            const [{ data: txData }, { data: walletData }, { data: catData }] = await Promise.all([
-                supabase.from("transactions").select("*, categories(*), wallets!inner(*)").neq("wallets.type", "crypto").order("date", { ascending: false }).range(0, PAGE_SIZE - 1),
-                supabase.from("wallets").select("*").neq("type", "crypto"),
-                supabase.from("categories").select("*").order("name"),
-            ]);
-            const txArr = (txData || []) as TransactionWithCategory[];
-            setTransactions(txArr);
-            setHasMore(txArr.length === PAGE_SIZE);
-            setWallets(walletData || []);
-            setCategories(catData || []);
 
             // 1. Fetch filters from Supabase profiles on load
             const { data: { user } } = await supabase.auth.getUser();
+            let initialMonth = new Date().toISOString().slice(0, 7);
+
             if (user) {
                 const { data: profile } = await supabase
                     .from("profiles")
@@ -154,11 +160,42 @@ function TransactionsContent() {
                     .single();
 
                 if (profile && profile.transaction_filters) {
-                    const filters = profile.transaction_filters as any;
+                    const filters = profile.transaction_filters as Record<string, string>;
                     if (filters.filterType) setFilterType(filters.filterType);
                     if (filters.filterWallet) setFilterWallet(filters.filterWallet);
+                    if (filters.filterMonth) {
+                        setFilterMonth(filters.filterMonth);
+                        initialMonth = filters.filterMonth;
+                    }
                 }
             }
+
+            let query = supabase
+                .from("transactions")
+                .select("*, categories(*), wallets!inner(*)")
+                .neq("wallets.type", "crypto")
+                .order("date", { ascending: false });
+
+            if (initialMonth !== "all") {
+                const startOfMonth = `${initialMonth}-01`;
+                const [year, month] = initialMonth.split("-").map(Number);
+                const endOfMonth = new Date(year, month, 0).toISOString().split("T")[0];
+                query = query.gte("date", startOfMonth).lte("date", endOfMonth);
+            }
+
+            query = query.range(0, PAGE_SIZE - 1);
+
+            const [{ data: txData }, { data: walletData }, { data: catData }] = await Promise.all([
+                query,
+                supabase.from("wallets").select("*").neq("type", "crypto"),
+                supabase.from("categories").select("*").order("name"),
+            ]);
+
+            const txArr = (txData || []) as TransactionWithCategory[];
+            setTransactions(txArr);
+            setHasMore(txArr.length === PAGE_SIZE);
+            setWallets(walletData || []);
+            setCategories(catData || []);
 
             setFiltersLoaded(true);
             setLoading(false);
@@ -173,10 +210,10 @@ function TransactionsContent() {
         const timer = setTimeout(async () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
-                const currentFilters = { filterType, filterWallet };
+                const currentFilters = { filterType, filterWallet, filterMonth };
                 const { error } = await supabase
                     .from("profiles")
-                    .update({ transaction_filters: currentFilters as any })
+                    .update({ transaction_filters: currentFilters as Record<string, string> })
                     .eq('id', user.id);
                 if (error) {
                     toast.error("Failed to save transaction filters");
@@ -185,7 +222,7 @@ function TransactionsContent() {
         }, 1000); // 1 second debounce
 
         return () => clearTimeout(timer);
-    }, [filterType, filterWallet, filtersLoaded, supabase]);
+    }, [filterType, filterWallet, filterMonth, filtersLoaded, supabase]);
 
     // Auto-open dialog from FAB (?new=true)
     useEffect(() => {
@@ -194,7 +231,7 @@ function TransactionsContent() {
             // Clean URL without refresh
             window.history.replaceState(null, "", "/transactions");
         }
-    }, [loading, searchParams]);
+    }, [loading, searchParams, openCreate]);
 
     // Infinite scroll observer
     useEffect(() => {
@@ -211,11 +248,58 @@ function TransactionsContent() {
         return () => observer.disconnect();
     }, [hasMore, loadingMore, fetchData]);
 
+    // Handle fetching when month filter changes (after initial load)
+    useEffect(() => {
+        if (!filtersLoaded) return;
+
+        const fetchMonthData = async () => {
+            setLoading(true);
+            let query = supabase
+                .from("transactions")
+                .select("*, categories(*), wallets!inner(*)")
+                .neq("wallets.type", "crypto")
+                .order("date", { ascending: false });
+
+            if (filterMonth !== "all") {
+                const startOfMonth = `${filterMonth}-01`;
+                const [year, month] = filterMonth.split("-").map(Number);
+                const endOfMonth = new Date(year, month, 0).toISOString().split("T")[0];
+                query = query.gte("date", startOfMonth).lte("date", endOfMonth);
+            }
+
+            query = query.range(0, PAGE_SIZE - 1);
+
+            const { data: txData } = await query;
+            const txArr = (txData || []) as TransactionWithCategory[];
+
+            setTransactions(txArr);
+            setHasMore(txArr.length === PAGE_SIZE);
+            setLoading(false);
+        };
+
+        fetchMonthData();
+    }, [filterMonth, filtersLoaded, supabase]);
+
     // Refresh helper (used after add/edit/delete/transfer)
     const refreshData = useCallback(async () => {
         setLoading(true);
+        let query = supabase
+            .from("transactions")
+            .select("*, categories(*), wallets!inner(*)")
+            .neq("wallets.type", "crypto")
+            .order("date", { ascending: false });
+
+        if (filterMonth !== "all") {
+            const startOfMonth = `${filterMonth}-01`;
+            const [year, month] = filterMonth.split("-").map(Number);
+            const endOfMonth = new Date(year, month, 0).toISOString().split("T")[0];
+            query = query.gte("date", startOfMonth).lte("date", endOfMonth);
+        }
+
+        query = query.range(0, PAGE_SIZE - 1);
+
         const [{ data: txData }, { data: walletData }] = await Promise.all([
-            supabase.from("transactions").select("*, categories(*), wallets!inner(*)").neq("wallets.type", "crypto").order("date", { ascending: false }).range(0, PAGE_SIZE - 1),
+            query,
             supabase.from("wallets").select("*").neq("type", "crypto"),
         ]);
         const txArr = (txData || []) as TransactionWithCategory[];
@@ -223,7 +307,7 @@ function TransactionsContent() {
         setHasMore(txArr.length === PAGE_SIZE);
         setWallets(walletData || []);
         setLoading(false);
-    }, [supabase]);
+    }, [filterMonth, supabase]);
 
 
 
@@ -504,7 +588,7 @@ function TransactionsContent() {
                 </div>
                 <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                     <Select value={filterType} onValueChange={setFilterType}>
-                        <SelectTrigger className="h-11 sm:h-12 flex-1 sm:min-w-[140px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-white text-xs sm:text-sm font-bold shadow-sm">
+                        <SelectTrigger className="h-11 sm:h-12 flex-1 sm:min-w-[120px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-white text-xs sm:text-sm font-bold shadow-sm">
                             <SelectValue placeholder="All Types" />
                         </SelectTrigger>
                         <SelectContent className="rounded-2xl border-slate-200 dark:border-slate-800">
@@ -515,7 +599,7 @@ function TransactionsContent() {
                         </SelectContent>
                     </Select>
                     <Select value={filterWallet} onValueChange={setFilterWallet}>
-                        <SelectTrigger className="h-11 sm:h-12 flex-1 sm:min-w-[160px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-white text-xs sm:text-sm font-bold shadow-sm">
+                        <SelectTrigger className="h-11 sm:h-12 flex-1 sm:min-w-[140px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-white text-xs sm:text-sm font-bold shadow-sm">
                             <SelectValue placeholder="All Wallets" />
                         </SelectTrigger>
                         <SelectContent className="rounded-2xl border-slate-200 dark:border-slate-800">
@@ -525,6 +609,12 @@ function TransactionsContent() {
                             ))}
                         </SelectContent>
                     </Select>
+                    <Input
+                        type="month"
+                        value={filterMonth}
+                        onChange={(e) => setFilterMonth(e.target.value)}
+                        className="h-11 sm:h-12 w-[140px] sm:w-[160px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-white text-xs sm:text-sm font-bold shadow-sm focus:ring-2 focus:ring-slate-900 dark:focus:ring-white transition-all [&::-webkit-calendar-picker-indicator]:opacity-50 dark:[&::-webkit-calendar-picker-indicator]:invert"
+                    />
                 </div>
             </div>
 
