@@ -119,11 +119,16 @@ export default function RecurringPage() {
         setSaving(true);
 
         const day = Math.min(Math.max(parseInt(editDayOfMonth) || 1, 1), 28);
-        const now = new Date();
-        const nextRun = now.getDate() < day
-            ? new Date(now.getFullYear(), now.getMonth(), day)
-            : new Date(now.getFullYear(), now.getMonth() + 1, day);
-        const nextRunDate = nextRun.toISOString().split("T")[0];
+        const dayChanged = day !== editItem.day_of_month;
+
+        let nextRunDate = editItem.next_run_date;
+        if (dayChanged) {
+            const now = new Date();
+            const nextRun = now.getDate() < day
+                ? new Date(now.getFullYear(), now.getMonth(), day)
+                : new Date(now.getFullYear(), now.getMonth() + 1, day);
+            nextRunDate = nextRun.toISOString().split("T")[0];
+        }
 
         // If switching from instalment (completed) back to forever or a new total, reactivate
         const wasCompleted = editItem.total_instalments !== null &&

@@ -8,6 +8,7 @@ interface StatCardProps {
     label: string;
     labelDesktop?: string;
     value: string;
+    subtitle?: string;
     icon: LucideIcon;
     trend?: { value: string; positive: boolean };
     className?: string;
@@ -80,6 +81,7 @@ export function StatCard({
     label,
     labelDesktop,
     value,
+    subtitle,
     maskedValue,
     icon: Icon,
     trend,
@@ -274,6 +276,11 @@ export function StatCard({
                                     </motion.div>
                                 )}
                             </div>
+                            {subtitle && (
+                                <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-1 tracking-tight">
+                                    {subtitle}
+                                </p>
+                            )}
                         </div>
 
                         <div className={cn(

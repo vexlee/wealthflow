@@ -423,6 +423,7 @@ export default function WalletsPage() {
                                 <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
                                     <SelectItem value="manual">Manual</SelectItem>
                                     <SelectItem value="bank">Bank</SelectItem>
+                                    <SelectItem value="credit_card">Credit Card</SelectItem>
                                     <SelectItem value="crypto">Crypto</SelectItem>
                                 </SelectContent>
                             </Select>

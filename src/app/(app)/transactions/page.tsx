@@ -125,12 +125,17 @@ function TransactionsContent() {
 
             if (filterMonth !== "all") {
                 const startOfMonth = `${filterMonth}-01`;
-                // Add 1 month to the date to get the first day of next month, then subtract 1 day to get the last day.
-                // Or just use JS Date:
                 const [year, month] = filterMonth.split("-").map(Number);
-                const endOfMonth = new Date(year, month, 0).toISOString().split("T")[0]; // Day 0 is last day of previous month, wait, month is 1-indexed here, so month is already next month in JS (0-indexed).
-                // e.g. 2026-02 -> year 2026, month 2. `new Date(2026, 2, 0)` -> last day of Feb.
+                const endOfMonth = `${year}-${String(month).padStart(2, "0")}-${String(new Date(year, month, 0).getDate()).padStart(2, "0")}`;
                 query = query.gte("date", startOfMonth).lte("date", endOfMonth);
+            }
+
+            if (filterType !== "all" && filterType !== "transfer") {
+                query = query.eq("type", filterType);
+            }
+
+            if (filterWallet !== "all") {
+                query = query.eq("wallet_id", filterWallet);
             }
 
             query = query.range(offset, offset + PAGE_SIZE - 1);
@@ -141,7 +146,7 @@ function TransactionsContent() {
             setTransactions((prev) => [...prev, ...newTx]);
             setLoadingMore(false);
         }
-    }, [supabase, transactions.length, filterMonth]);
+    }, [supabase, transactions.length, filterMonth, filterType, filterWallet]);
 
     // Initial fetch
     useEffect(() => {
@@ -179,7 +184,7 @@ function TransactionsContent() {
             if (initialMonth !== "all") {
                 const startOfMonth = `${initialMonth}-01`;
                 const [year, month] = initialMonth.split("-").map(Number);
-                const endOfMonth = new Date(year, month, 0).toISOString().split("T")[0];
+                const endOfMonth = `${year}-${String(month).padStart(2, "0")}-${String(new Date(year, month, 0).getDate()).padStart(2, "0")}`;
                 query = query.gte("date", startOfMonth).lte("date", endOfMonth);
             }
 
@@ -263,8 +268,16 @@ function TransactionsContent() {
             if (filterMonth !== "all") {
                 const startOfMonth = `${filterMonth}-01`;
                 const [year, month] = filterMonth.split("-").map(Number);
-                const endOfMonth = new Date(year, month, 0).toISOString().split("T")[0];
+                const endOfMonth = `${year}-${String(month).padStart(2, "0")}-${String(new Date(year, month, 0).getDate()).padStart(2, "0")}`;
                 query = query.gte("date", startOfMonth).lte("date", endOfMonth);
+            }
+
+            if (filterType !== "all" && filterType !== "transfer") {
+                query = query.eq("type", filterType);
+            }
+
+            if (filterWallet !== "all") {
+                query = query.eq("wallet_id", filterWallet);
             }
 
             query = query.range(0, PAGE_SIZE - 1);
@@ -278,7 +291,7 @@ function TransactionsContent() {
         };
 
         fetchMonthData();
-    }, [filterMonth, filtersLoaded, supabase]);
+    }, [filterMonth, filterType, filterWallet, filtersLoaded, supabase]);
 
     // Refresh helper (used after add/edit/delete/transfer)
     const refreshData = useCallback(async () => {
@@ -292,8 +305,16 @@ function TransactionsContent() {
         if (filterMonth !== "all") {
             const startOfMonth = `${filterMonth}-01`;
             const [year, month] = filterMonth.split("-").map(Number);
-            const endOfMonth = new Date(year, month, 0).toISOString().split("T")[0];
+            const endOfMonth = `${year}-${String(month).padStart(2, "0")}-${String(new Date(year, month, 0).getDate()).padStart(2, "0")}`;
             query = query.gte("date", startOfMonth).lte("date", endOfMonth);
+        }
+
+        if (filterType !== "all" && filterType !== "transfer") {
+            query = query.eq("type", filterType);
+        }
+
+        if (filterWallet !== "all") {
+            query = query.eq("wallet_id", filterWallet);
         }
 
         query = query.range(0, PAGE_SIZE - 1);
@@ -307,7 +328,7 @@ function TransactionsContent() {
         setHasMore(txArr.length === PAGE_SIZE);
         setWallets(walletData || []);
         setLoading(false);
-    }, [filterMonth, supabase]);
+    }, [filterMonth, filterType, filterWallet, supabase]);
 
 
 
@@ -429,6 +450,38 @@ function TransactionsContent() {
         // Schedule the actual DB delete after 5 seconds
         const timer = setTimeout(async () => {
             pendingDeleteRef.current = null;
+
+            // If it's a payment for a recurring transaction, we need to revert the next_run_date
+            if (deletedTx.recurring_id && deletedTx.type === "expense") {
+                const { data: recurData } = await supabase
+                    .from("recurring_transactions")
+                    .select("*")
+                    .eq("id", deletedTx.recurring_id)
+                    .single();
+
+                if (recurData) {
+                    const currentNextRun = new Date(recurData.next_run_date);
+                    // Revert by 1 month
+                    const prevNextRun = new Date(currentNextRun.setMonth(currentNextRun.getMonth() - 1));
+
+                    const updates: any = {
+                        next_run_date: prevNextRun.toISOString().split("T")[0],
+                    };
+
+                    if (recurData.total_instalments !== null && recurData.instalments_paid > 0) {
+                        updates.instalments_paid = recurData.instalments_paid - 1;
+                        if (updates.instalments_paid < recurData.total_instalments) {
+                            updates.is_active = true;
+                        }
+                    }
+
+                    await supabase
+                        .from("recurring_transactions")
+                        .update(updates)
+                        .eq("id", deletedTx.recurring_id);
+                }
+            }
+
             const { error } = await supabase.from("transactions").delete().eq("id", id);
             if (error) {
                 // Restore on failure
@@ -689,7 +742,7 @@ function TransactionsContent() {
                     ))}
 
                     {/* Infinite scroll sentinel */}
-                    {hasMore && !searchQuery && filterType === "all" && filterWallet === "all" && (
+                    {hasMore && !searchQuery && (
                         <div ref={loadMoreRef} className="flex justify-center py-6">
                             {loadingMore ? (
                                 <div className="flex items-center gap-2 text-sm text-slate-400">

@@ -14,7 +14,8 @@ import {
 import { SummaryCards } from "@/components/reports/summary-cards";
 import { ReportCalendar } from "@/components/reports/report-calendar";
 import { CategoryBreakdown } from "@/components/reports/category-breakdown";
-import { MonthlyTrend } from "@/components/reports/monthly-trend";
+import { RecentTransactions } from "@/components/reports/recent-transactions";
+import { RecurringExpensesCardView } from "@/components/reports/recurring-expenses-card-view";
 import type { Wallet } from "@/types/database";
 
 export default function ReportsPage() {
@@ -26,6 +27,10 @@ export default function ReportsPage() {
     const [loading, setLoading] = useState(true);
     const [income, setIncome] = useState(0);
     const [expenses, setExpenses] = useState(0);
+    const [forecastIncome, setForecastIncome] = useState(0);
+    const [forecastExpenses, setForecastExpenses] = useState(0);
+    const [recurringTransactions, setRecurringTransactions] = useState<any[]>([]);
+    const [monthActualTransactions, setMonthActualTransactions] = useState<any[]>([]);
 
     const fetchReportsData = useCallback(async () => {
         setLoading(true);
@@ -62,8 +67,12 @@ export default function ReportsPage() {
         }
 
         const { data: recurringData } = await recurringTxQuery;
+        if (recurringData) {
+            setRecurringTransactions(recurringData);
+        }
 
         if (!error && monthTx) {
+            setMonthActualTransactions(monthTx);
             let allTransactions = [...monthTx];
             const today = new Date();
 
@@ -76,6 +85,13 @@ export default function ReportsPage() {
 
                 recurringData.forEach(recur => {
                     const recurDay = recur.day_of_month;
+
+                    const nextRunDate = new Date(recur.next_run_date);
+                    const nextRunMonthValue = nextRunDate.getFullYear() * 12 + nextRunDate.getMonth();
+                    const targetMonthValue = year * 12 + currentMonth.getMonth();
+
+                    // Skip if advanced past this viewed month (already paid)
+                    if (nextRunMonthValue > targetMonthValue) return;
 
                     // Skip if a real transaction for this recurring already exists this month
                     if (recurringIdsWithRealTx.has(recur.id)) {
@@ -125,7 +141,7 @@ export default function ReportsPage() {
             }
 
             // Ensure chronological order
-            allTransactions.sort((a, b) => {
+            allTransactions.sort((a: any, b: any) => {
                 const dateA = a.date ? new Date(a.date).getTime() : 0;
                 const dateB = b.date ? new Date(b.date).getTime() : 0;
                 return dateB - dateA;
@@ -135,18 +151,24 @@ export default function ReportsPage() {
 
             let totalIncome = 0;
             let totalExpenses = 0;
+            let forecastIncome = 0;
+            let forecastExpenses = 0;
 
             allTransactions.forEach((tx: any) => {
                 const amount = Number(tx.amount);
-                if (tx.type === "income") {
-                    totalIncome += amount;
-                } else if (tx.type === "expense") {
-                    totalExpenses += amount;
+                if (tx.isForecast) {
+                    if (tx.type === "income") forecastIncome += amount;
+                    else if (tx.type === "expense") forecastExpenses += amount;
+                } else {
+                    if (tx.type === "income") totalIncome += amount;
+                    else if (tx.type === "expense") totalExpenses += amount;
                 }
             });
 
             setIncome(totalIncome);
             setExpenses(totalExpenses);
+            setForecastIncome(forecastIncome);
+            setForecastExpenses(forecastExpenses);
         } else {
             console.error("Failed to fetch reports transactions", error);
         }
@@ -241,13 +263,21 @@ export default function ReportsPage() {
                 </div>
             ) : (
                 <div className="space-y-4 sm:space-y-6">
-                    <SummaryCards income={income} expenses={expenses} />
+                    <SummaryCards income={income} expenses={expenses} forecastIncome={forecastIncome} forecastExpenses={forecastExpenses} />
 
                     <ReportCalendar transactions={transactions} month={currentMonth} />
 
+                    <RecurringExpensesCardView
+                        wallets={wallets}
+                        recurringTransactions={recurringTransactions}
+                        actualTransactions={monthActualTransactions}
+                        currentMonth={currentMonth}
+                        onTransactionPaid={fetchReportsData}
+                    />
+
                     <CategoryBreakdown transactions={transactions} />
 
-                    <MonthlyTrend transactions={transactions} month={currentMonth} />
+                    <RecentTransactions transactions={transactions} />
                 </div>
             )}
         </div>

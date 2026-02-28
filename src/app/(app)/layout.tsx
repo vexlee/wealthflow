@@ -151,8 +151,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                     </AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm text-slate-800 dark:text-slate-200 truncate">{userEmail || "Loading..."}</p>
-                                    <p className="text-[11px] text-slate-400">Free Plan</p>
+                                    <span className="block text-sm text-slate-800 dark:text-slate-200 truncate">{userEmail || "Loading..."}</span>
+                                    <span className="block text-[11px] text-slate-400">Free Plan</span>
                                 </div>
                             </button>
                         </DropdownMenuTrigger>
@@ -199,7 +199,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
 
             {/* Main Content */}
-            <main className="flex-1 lg:ml-64">
+            <main className="flex-1 lg:ml-64 min-w-0">
                 <div className="pt-14 lg:pt-0 pb-20 lg:pb-0 min-h-screen">
                     {children}
                 </div>

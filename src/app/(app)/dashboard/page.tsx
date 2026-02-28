@@ -297,7 +297,7 @@ export default function DashboardPage() {
         const { data: walletsData } = await supabase.from("wallets").select("*");
 
         // Fetch all transactions for wallet balances
-        const { data: allTx } = await supabase.from("transactions").select("*");
+        const { data: allTx } = await supabase.from("transactions").select("*, categories(*)");
 
         // Compute wallet balances
         const walletBalances = (walletsData || []).map((w) => {
