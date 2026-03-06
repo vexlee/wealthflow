@@ -7,7 +7,7 @@ import { useCurrency } from "@/contexts/currency-context";
 import { usePrivacy } from "@/contexts/privacy-context";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { formatCurrency, formatDateShort, getDaysRemainingInMonth, getBudgetProgressColor } from "@/lib/utils";
+import { formatCurrency, formatDateShort, getDaysRemainingInMonth, getBudgetProgressColor, isTransfer } from "@/lib/utils";
 import { StatCard } from "@/components/shared/stat-card";
 import { PrivacyToggle } from "@/components/shared/privacy-toggle";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,7 +32,7 @@ import { Button } from "@/components/ui/button";
 import { useCryptoPrices } from "@/hooks/use-crypto-prices";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { SUPPORTED_CRYPTOS } from "@/lib/crypto";
-import type { TransactionWithCategory, Wallet as WalletType, Budget, Category } from "@/types/database";
+import type { TransactionWithCategory, Wallet as WalletType, Budget, Category, RecurringTransaction } from "@/types/database";
 
 // Dynamic imports for Nivo charts to avoid SSR issues
 import dynamic from "next/dynamic";
@@ -50,6 +50,7 @@ export default function DashboardPage() {
     const [monthlyExpenses, setMonthlyExpenses] = useState(0);
     const [allTransactions, setAllTransactions] = useState<TransactionWithCategory[]>([]);
     const [monthTransactions, setMonthTransactions] = useState<TransactionWithCategory[]>([]);
+    const [recurringTransactions, setRecurringTransactions] = useState<RecurringTransaction[]>([]);
     const [spendingByCategory, setSpendingByCategory] = useState<{ id: string; label: string; value: number; color: string }[]>([]);
     const [cashFlowData, setCashFlowData] = useState<{ id: string; data: { x: string; y: number }[] }[]>([]);
     const [metricTrends, setMetricTrends] = useState<{
@@ -152,7 +153,7 @@ export default function DashboardPage() {
     const { prices } = useCryptoPrices(wallets, currency);
 
     useEffect(() => {
-        if (!allTransactions.length && !monthTransactions.length && !wallets.length && !budgets.length) return;
+        if (!allTransactions.length && !monthTransactions.length && !wallets.length && !budgets.length && !recurringTransactions.length) return;
 
         const getFiatAmount = (amount: number | string, walletId: string | null) => {
             const wallet = wallets.find(w => w.id === walletId);
@@ -164,18 +165,38 @@ export default function DashboardPage() {
         };
 
         const income = monthTransactions
-            .filter((t) => t.type === "income" && (metricsConfig.incomeWalletIds.length === 0 || metricsConfig.incomeWalletIds.includes(t.wallet_id || "")))
+            .filter((t) => t.type === "income" && !isTransfer(t) && (metricsConfig.incomeWalletIds.length === 0 || metricsConfig.incomeWalletIds.includes(t.wallet_id || "")))
             .reduce((sum, t) => sum + getFiatAmount(t.amount, t.wallet_id), 0);
-        const expenses = monthTransactions
+
+        const now = new Date();
+        const currentMonthValue = now.getFullYear() * 12 + now.getMonth();
+
+        // Total recurring expenses that *should* be paid this month
+        let recurringExpensesDueMonth = recurringTransactions
             .filter((t) => t.type === "expense" && (metricsConfig.expenseWalletIds.length === 0 || metricsConfig.expenseWalletIds.includes(t.wallet_id || "")))
-            .reduce((sum, t) => sum + getFiatAmount(t.amount, t.wallet_id), 0);
+            .reduce((sum, t) => {
+                const nextRunDate = new Date(t.next_run_date);
+                const nextRunMonthValue = nextRunDate.getFullYear() * 12 + nextRunDate.getMonth();
+
+                // If it's active and next run date is exactly this month (meaning it's due now)
+                // OR it's earlier than this month (meaning it's overdue)
+                // Then it HAS NOT been paid for this month, so we add its amount to expected expenses.
+                if (nextRunMonthValue <= currentMonthValue) {
+                    return sum + getFiatAmount(t.amount, t.wallet_id);
+                }
+                return sum;
+            }, 0);
+
+        const expenses = monthTransactions
+            .filter((t) => t.type === "expense" && !isTransfer(t) && (metricsConfig.expenseWalletIds.length === 0 || metricsConfig.expenseWalletIds.includes(t.wallet_id || "")))
+            .reduce((sum, t) => sum + getFiatAmount(t.amount, t.wallet_id), 0) + recurringExpensesDueMonth;
 
         setMonthlyIncome(income);
         setMonthlyExpenses(expenses);
 
         const categoryMap = new Map<string, { name: string; total: number }>();
         monthTransactions
-            .filter((t) => t.type === "expense")
+            .filter((t) => t.type === "expense" && !isTransfer(t))
             .forEach((t) => {
                 const catName = t.categories?.name || "Uncategorized";
                 const existing = categoryMap.get(catName) || { name: catName, total: 0 };
@@ -203,14 +224,14 @@ export default function DashboardPage() {
 
         const incomeData = last30.map((dateStr) => {
             const dayIncome = allTransactions
-                .filter((t) => t.date === dateStr && t.type === "income")
+                .filter((t) => t.date === dateStr && t.type === "income" && !isTransfer(t))
                 .reduce((sum, t) => sum + getFiatAmount(t.amount, t.wallet_id), 0);
             return { x: dateStr.slice(5), y: Math.round(dayIncome) };
         });
 
         const expenseData = last30.map((dateStr) => {
             const dayExpense = allTransactions
-                .filter((t) => t.date === dateStr && t.type === "expense")
+                .filter((t) => t.date === dateStr && t.type === "expense" && !isTransfer(t))
                 .reduce((sum, t) => sum + getFiatAmount(t.amount, t.wallet_id), 0);
             return { x: dateStr.slice(5), y: Math.round(dayExpense) };
         });
@@ -283,7 +304,7 @@ export default function DashboardPage() {
             return budgetsWithSpent;
         });
 
-    }, [wallets, monthTransactions, allTransactions, metricsConfig, prices]); // Removed budgets to avoid loop
+    }, [wallets, monthTransactions, allTransactions, recurringTransactions, metricsConfig, prices]); // Removed budgets to avoid loop
 
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -321,6 +342,9 @@ export default function DashboardPage() {
         setMonthTransactions(monthTransactions);
         setAllTransactions((allTx || []) as TransactionWithCategory[]);
         setRecentTransactions(monthTransactions.slice(0, 8));
+
+        const { data: recurTx } = await supabase.from("recurring_transactions").select("*").eq("is_active", true);
+        setRecurringTransactions((recurTx || []) as RecurringTransaction[]);
 
         const { data: budgetData } = await supabase
             .from("budgets")

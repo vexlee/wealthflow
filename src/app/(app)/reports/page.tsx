@@ -16,6 +16,7 @@ import { ReportCalendar } from "@/components/reports/report-calendar";
 import { CategoryBreakdown } from "@/components/reports/category-breakdown";
 import { RecentTransactions } from "@/components/reports/recent-transactions";
 import { RecurringExpensesCardView } from "@/components/reports/recurring-expenses-card-view";
+import { isTransfer, getNextRecurringDate, toISODateString } from "@/lib/utils";
 import type { Wallet } from "@/types/database";
 
 export default function ReportsPage() {
@@ -113,8 +114,17 @@ export default function ReportsPage() {
                     }
 
                     // Skip if the recurring date has already passed in the current month
+                    /* Removed to show all amounts that have been set regardless of date
                     if (currentMonth.getFullYear() === today.getFullYear() && currentMonth.getMonth() === today.getMonth() && recurDay <= today.getDate()) {
                         return;
+                    }
+                    */
+
+
+                    // Calculate valid date for this month based on the recurring day
+                    let displayDate = new Date(year, currentMonth.getMonth(), recurDay);
+                    if (displayDate.getMonth() !== currentMonth.getMonth()) {
+                        displayDate = new Date(year, currentMonth.getMonth() + 1, 0);
                     }
 
                     // Create a mock transaction object to inject into the reports data
@@ -122,7 +132,7 @@ export default function ReportsPage() {
                         id: `forecast-${recur.id}-${month}-${recurDay}`,
                         amount: recur.amount,
                         type: recur.type,
-                        date: `${year}-${String(month).padStart(2, "0")}-${String(recurDay).padStart(2, "0")}`,
+                        date: toISODateString(displayDate),
                         name: `${recur.merchant_name || 'Recurring'} (Forecast)`,
                         merchant_name: recur.merchant_name,
                         categories: recur.categories,
@@ -156,6 +166,7 @@ export default function ReportsPage() {
 
             allTransactions.forEach((tx: any) => {
                 const amount = Number(tx.amount);
+                if (isTransfer(tx)) return; // Internal transfers are not income/expenses
                 if (tx.isForecast) {
                     if (tx.type === "income") forecastIncome += amount;
                     else if (tx.type === "expense") forecastExpenses += amount;

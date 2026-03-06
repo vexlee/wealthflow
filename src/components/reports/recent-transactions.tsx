@@ -2,7 +2,7 @@
 
 import { useCurrency } from "@/contexts/currency-context";
 import { usePrivacy } from "@/contexts/privacy-context";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, isTransfer } from "@/lib/utils";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight } from "lucide-react";
@@ -61,8 +61,8 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
                                     </p>
                                     <p className="text-[11px] font-medium text-slate-400">{tx.date ? format(new Date(tx.date), "MMM d, yyyy") : ""}</p>
                                 </div>
-                                <span className={`text-sm sm:text-base font-black tabular-nums ${tx.type === "income" ? "text-emerald-500" : "text-rose-500"}`}>
-                                    {tx.type === "income" ? "+" : "-"}{maskValue(Number(tx.amount))}
+                                <span className={`text-sm sm:text-base font-black tabular-nums ${isTransfer(tx) ? "text-blue-500" : tx.type === "income" ? "text-emerald-500" : "text-rose-500"}`}>
+                                    {isTransfer(tx) ? "" : tx.type === "income" ? "+" : "-"}{maskValue(Number(tx.amount))}
                                 </span>
                             </div>
                         ))

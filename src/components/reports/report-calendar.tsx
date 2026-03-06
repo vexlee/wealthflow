@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useCurrency } from "@/contexts/currency-context";
 import { formatCurrency } from "@/lib/utils";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { isTransfer } from "@/lib/utils";
 import {
     startOfMonth,
     endOfMonth,
@@ -59,6 +60,7 @@ export function ReportCalendar({ transactions, month }: ReportCalendarProps) {
         let income = 0;
         let expense = 0;
         dayTxs.forEach(tx => {
+            if (isTransfer(tx)) return; // Internal transfers are not income/expenses
             const amount = Number(tx.amount);
             if (tx.type === "income") income += amount;
             else if (tx.type === "expense") expense += amount;

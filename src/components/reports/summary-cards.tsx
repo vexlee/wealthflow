@@ -27,8 +27,8 @@ export function SummaryCards({ income, expenses, forecastIncome = 0, forecastExp
             <StatCard
                 label="Income"
                 labelDesktop="Total Income"
-                value={formatCurrency(income, currency)}
-                subtitle={forecastIncome > 0 ? `+${formatCurrency(forecastIncome, currency)} projected` : undefined}
+                value={formatCurrency(income + forecastIncome, currency)}
+                subtitle={forecastIncome > 0 ? `${formatCurrency(income, currency)} actual` : undefined}
                 icon={TrendingUp}
                 theme="emerald"
                 compact
@@ -37,8 +37,8 @@ export function SummaryCards({ income, expenses, forecastIncome = 0, forecastExp
             <StatCard
                 label="Expenses"
                 labelDesktop="Total Expenses"
-                value={formatCurrency(expenses, currency)}
-                subtitle={forecastExpenses > 0 ? `+${formatCurrency(forecastExpenses, currency)} projected` : undefined}
+                value={formatCurrency(expenses + forecastExpenses, currency)}
+                subtitle={forecastExpenses > 0 ? `${formatCurrency(expenses, currency)} actual` : undefined}
                 icon={TrendingDown}
                 theme="rose"
                 compact
@@ -47,10 +47,11 @@ export function SummaryCards({ income, expenses, forecastIncome = 0, forecastExp
             <StatCard
                 label="Net"
                 labelDesktop="Net Balance"
-                value={formatCurrency(net, currency)}
-                subtitle={hasForecast ? `${formatCurrency(projectedNet, currency)} projected` : undefined}
+                value={formatCurrency(projectedNet, currency)}
+                subtitle={hasForecast ? `${formatCurrency(income - expenses, currency)} current` : undefined}
                 icon={ArrowLeftRight}
-                theme={net >= 0 ? "emerald" : "rose"}
+                theme={projectedNet >= 0 ? "emerald" : "rose"}
+
                 compact
                 disablePrivacy={true}
             />

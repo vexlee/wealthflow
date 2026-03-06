@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { useCurrency } from "@/contexts/currency-context";
 import { usePrivacy } from "@/contexts/privacy-context";
 import { eachDayOfInterval, startOfMonth, endOfMonth, format, isSameDay } from "date-fns";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, isTransfer } from "@/lib/utils";
 
 const ResponsiveLine = dynamic(() => import("@nivo/line").then(m => m.ResponsiveLine), { ssr: false });
 
@@ -25,14 +25,14 @@ export function MonthlyTrend({ transactions, month }: MonthlyTrendProps) {
 
         const incomeData = days.map(day => {
             const dayIncome = transactions
-                .filter(t => t.type === "income" && isSameDay(new Date(t.date), day))
+                .filter(t => t.type === "income" && !isTransfer(t) && isSameDay(new Date(t.date), day))
                 .reduce((sum, t) => sum + Number(t.amount), 0);
             return { x: format(day, "dd"), y: dayIncome, fullDate: format(day, "MMM dd") };
         });
 
         const expenseData = days.map(day => {
             const dayExpense = transactions
-                .filter(t => t.type === "expense" && isSameDay(new Date(t.date), day))
+                .filter(t => t.type === "expense" && !isTransfer(t) && isSameDay(new Date(t.date), day))
                 .reduce((sum, t) => sum + Number(t.amount), 0);
             return { x: format(day, "dd"), y: dayExpense, fullDate: format(day, "MMM dd") };
         });

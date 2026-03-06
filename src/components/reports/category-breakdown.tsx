@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useCurrency } from "@/contexts/currency-context";
 import { usePrivacy } from "@/contexts/privacy-context";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, isTransfer } from "@/lib/utils";
 import { useMediaQuery } from "@/hooks/use-media-query";
 
 const ResponsivePie = dynamic(() => import("@nivo/pie").then(m => m.ResponsivePie), { ssr: false });
@@ -34,7 +34,7 @@ export function CategoryBreakdown({ transactions }: CategoryBreakdownProps) {
     const [activeId, setActiveId] = useState<string | null>(null);
 
     const { data: _data, total: totalExpenses } = useMemo(() => {
-        const expenseTxs = transactions.filter(t => t.type === "expense");
+        const expenseTxs = transactions.filter(t => t.type === "expense" && !isTransfer(t));
         const categoryMap = new Map<string, { name: string; total: number }>();
         let total = 0;
 

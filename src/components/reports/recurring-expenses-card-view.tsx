@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { formatCurrency, cn } from "@/lib/utils";
+import { formatCurrency, cn, getNextRecurringDate } from "@/lib/utils";
 import { useCurrency } from "@/contexts/currency-context";
 import { Wallet, RecurringTransaction } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
@@ -66,42 +66,32 @@ export function RecurringExpensesCardView({
             const recurWalletId = recur.wallet_id;
             if (!recurWalletId) return;
 
+            // Use next_run_date as the single source of truth for "paid".
+            // If next_run_date has been advanced past the current month, the expense
+            // was already confirmed as paid — exclude it from the due list entirely.
             const nextRunDate = new Date(recur.next_run_date);
             const nextRunMonthValue = nextRunDate.getFullYear() * 12 + nextRunDate.getMonth();
             const targetMonthValue = year * 12 + month;
+            if (nextRunMonthValue > targetMonthValue) return; // already paid, skip
 
-            let remainingBalance = Number(recur.amount);
-
-            if (nextRunMonthValue > targetMonthValue) {
-                // Advanced past the target month -> paid
-                remainingBalance = 0;
-            } else {
-                // If not advanced, subtract any payments made specifically to this recurring ID *in this viewed month*
-                // This covers partial payments that haven't advanced the next_run_date yet
-                const paidAmountThisMonth = actualTransactions
-                    .filter(tx => tx.recurring_id === recur.id && tx.type === "expense")
-                    .reduce((sum, tx) => sum + Number(tx.amount), 0);
-                remainingBalance -= paidAmountThisMonth;
-            }
+            const fullAmount = Number(recur.amount);
 
             if (!walletTotals[recurWalletId]) {
                 walletTotals[recurWalletId] = 0;
                 walletRecurringTxs[recurWalletId] = [];
             }
 
-            if (remainingBalance > 0.01) {
-                walletTotals[recurWalletId] += remainingBalance;
-            }
+            // Always show the full amount — never subtract existing transactions,
+            // because that can make the balance appear as 0 before the user marks it paid.
+            walletTotals[recurWalletId] += fullAmount;
 
-            // Always add to the list — never auto-mark as paid
+            // Never auto-select or disable — user must manually mark as paid
             walletRecurringTxs[recurWalletId].push({
                 ...recur,
-                remainingBalance: Math.max(0, remainingBalance),
-                paymentAmount: remainingBalance > 0 ? remainingBalance.toString() : "0.00",
+                remainingBalance: fullAmount,
+                paymentAmount: fullAmount.toString(),
                 sourceWalletId: recurWalletId,
                 selected: false,
-                isPaid: false,
-                isFullyPaid: remainingBalance <= 0.01,
             });
         });
 
@@ -125,7 +115,7 @@ export function RecurringExpensesCardView({
     };
 
     const handleConfirmPayment = async () => {
-        const selectedItems = modalItems.filter(item => item.selected && !item.isFullyPaid);
+        const selectedItems = modalItems.filter(item => item.selected);
         if (selectedItems.length === 0) {
             toast.error("Please select at least one transaction to pay");
             return;
@@ -167,9 +157,8 @@ export function RecurringExpensesCardView({
 
                 if (txError) throw txError;
 
-                // Advance next_run_date for the recurring transaction
-                const currentNextRun = new Date(item.next_run_date);
-                const newNextRun = addMonths(currentNextRun, 1);
+                // Advance next_run_date using the utility to maintain the correct target day
+                const newNextRun = getNextRecurringDate(item.day_of_month, new Date(new Date(item.next_run_date).getTime() + 86400000));
 
                 const updates: any = {
                     next_run_date: format(newNextRun, "yyyy-MM-dd"),
@@ -199,7 +188,7 @@ export function RecurringExpensesCardView({
                         category_id: item.category_id,
                         merchant_name: `${item.merchant_name || 'Recurring'} (Carried Forward)`,
                         user_id: item.user_id,
-                        day_of_month: Math.min(item.day_of_month, 28),
+                        day_of_month: item.day_of_month,
                         next_run_date: nextMonthStr,
                         total_instalments: 1,
                         instalments_paid: 0,
@@ -228,7 +217,6 @@ export function RecurringExpensesCardView({
         .map(wallet => ({
             ...wallet,
             totalDue: recurringData.walletTotals[wallet.id] || 0,
-            allPaid: (recurringData.walletTotals[wallet.id] || 0) <= 0.01,
         }));
 
     if (activeWallets.length === 0) return null;
@@ -291,27 +279,25 @@ export function RecurringExpensesCardView({
 
                     <div className="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar space-y-4">
                         {modalItems.map((item, index) => (
-                            <div key={item.id} className={cn("p-4 rounded-2xl border bg-slate-50/50 dark:bg-slate-800/20 space-y-3", item.isFullyPaid ? "opacity-60 border-emerald-100 dark:border-emerald-900/30" : "border-slate-100 dark:border-slate-800")}>
+                            <div key={item.id} className={cn("p-4 rounded-2xl border bg-slate-50/50 dark:bg-slate-800/20 space-y-3", "border-slate-100 dark:border-slate-800")}>
                                 <div className="flex items-start gap-3">
                                     <Checkbox
                                         id={`check-${item.id}`}
                                         checked={item.selected}
                                         onCheckedChange={(checked) => updateModalItem(index, 'selected', checked === true)}
-                                        disabled={item.isFullyPaid}
-                                        className={cn("mt-1", item.isFullyPaid && "opacity-100 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600")}
+                                        className="mt-1"
                                     />
                                     <div className="flex-1 min-w-0">
-                                        <label htmlFor={`check-${item.id}`} className={cn("text-sm font-bold block", item.isFullyPaid ? "text-emerald-600 dark:text-emerald-400 cursor-default" : "text-slate-900 dark:text-white cursor-pointer")}>
+                                        <label htmlFor={`check-${item.id}`} className="text-sm font-bold block text-slate-900 dark:text-white cursor-pointer">
                                             {item.merchant_name || item.categories?.name || 'Recurring Transaction'}
-                                            {item.isFullyPaid && " ✓"}
                                         </label>
                                         <p className="text-xs font-medium text-slate-500 mt-0.5">
-                                            {item.isFullyPaid ? "Paid in full" : `Remaining: ${formatCurrency(item.remainingBalance, currency)}`}
+                                            {`Amount: ${formatCurrency(Number(item.amount), currency)}`}
                                         </p>
                                     </div>
                                 </div>
 
-                                {item.selected && !item.isFullyPaid && (
+                                {item.selected && (
                                     <div className="pl-7 grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 pt-3 border-t border-slate-200/50 dark:border-slate-700/50 animate-in fade-in slide-in-from-top-2 duration-200">
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Payment Amount</label>
@@ -364,7 +350,7 @@ export function RecurringExpensesCardView({
                         <Button
                             type="button"
                             onClick={handleConfirmPayment}
-                            disabled={!modalItems.some(i => i.selected && !i.isFullyPaid) || isSubmitting}
+                            disabled={!modalItems.some(i => i.selected) || isSubmitting}
                             className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/30"
                         >
                             {isSubmitting ? "Processing..." : "Confirm Payment"}

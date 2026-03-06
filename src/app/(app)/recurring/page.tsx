@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useCurrency } from "@/contexts/currency-context";
 import { createClient } from "@/lib/supabase/client";
-import { formatCurrency, cn } from "@/lib/utils";
+import { formatCurrency, cn, getNextRecurringDate, toISODateString } from "@/lib/utils";
 import { StatCard } from "@/components/shared/stat-card";
 import { TrendingDown, DollarSign } from "lucide-react";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -19,7 +19,7 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-    RefreshCw, Loader2, Trash2, AlertCircle, CheckCircle2, PauseCircle, Pencil,
+    RefreshCw, Loader2, Trash2, AlertCircle, CheckCircle2, PauseCircle, Pencil, Plus
 } from "lucide-react";
 import { toast } from "sonner";
 import type { RecurringTransactionWithCategory, Wallet, Category } from "@/types/database";
@@ -40,17 +40,18 @@ export default function RecurringPage() {
     const [toggling, setToggling] = useState<string | null>(null);
     const [deleting, setDeleting] = useState(false);
 
-    // Edit dialog state
-    const [editItem, setEditItem] = useState<RecurringTransactionWithCategory | null>(null);
+    // Edit / Create dialog state
+    const [editItem, setEditItem] = useState<RecurringTransactionWithCategory | 'new' | null>(null);
     const [editMerchant, setEditMerchant] = useState("");
     const [editAmount, setEditAmount] = useState("");
     const [editType, setEditType] = useState("expense");
     const [editCategoryId, setEditCategoryId] = useState<string>("");
     const [editWalletId, setEditWalletId] = useState<string>("");
-    const [editDayOfMonth, setEditDayOfMonth] = useState("1");
+    const [editStartDate, setEditStartDate] = useState(toISODateString(new Date()));
     const [editNote, setEditNote] = useState("");
-    const [editIsInstalment, setEditIsInstalment] = useState(false);
+    const [editScheduleType, setEditScheduleType] = useState<'forever' | 'instalment' | 'one-time'>('forever');
     const [editTotalInstalments, setEditTotalInstalments] = useState("");
+    const [editRecordNow, setEditRecordNow] = useState(true);
     const [saving, setSaving] = useState(false);
 
     const fetchData = useCallback(async () => {
@@ -95,70 +96,152 @@ export default function RecurringPage() {
         setEditType(item.type);
         setEditCategoryId(item.category_id || "");
         setEditWalletId(item.wallet_id || "");
-        setEditDayOfMonth(String(item.day_of_month));
+        setEditStartDate(item.next_run_date || toISODateString(new Date()));
         setEditNote(item.note || "");
-        setEditIsInstalment(item.total_instalments !== null);
+        if (item.total_instalments === 1) {
+            setEditScheduleType('one-time');
+        } else if (item.total_instalments !== null) {
+            setEditScheduleType('instalment');
+        } else {
+            setEditScheduleType('forever');
+        }
         setEditTotalInstalments(item.total_instalments !== null ? String(item.total_instalments) : "");
+    };
+
+    const openCreate = () => {
+        setEditItem('new');
+        setEditMerchant("");
+        setEditAmount("");
+        setEditType("expense");
+        setEditCategoryId("");
+        setEditWalletId(wallets[0]?.id || "");
+        setEditStartDate(toISODateString(new Date()));
+        setEditNote("");
+        setEditScheduleType('forever');
+        setEditTotalInstalments("");
+        setEditRecordNow(true);
     };
 
     const handleSave = async () => {
         if (!editItem || !editAmount || Number(editAmount) <= 0) return;
-
-        const totalInstalments = editIsInstalment ? parseInt(editTotalInstalments) || 0 : null;
-        if (editIsInstalment) {
-            if (!totalInstalments || totalInstalments < 1) {
-                toast.error("Total months must be at least 1");
-                return;
-            }
-            if (totalInstalments < editItem.instalments_paid) {
-                toast.error(`Total months can't be less than months already paid (${editItem.instalments_paid})`);
-                return;
-            }
-        }
+        const isNew = editItem === 'new';
+        const currentItem = isNew ? null : (editItem as RecurringTransactionWithCategory);
 
         setSaving(true);
 
-        const day = Math.min(Math.max(parseInt(editDayOfMonth) || 1, 1), 28);
-        const dayChanged = day !== editItem.day_of_month;
+        const startDateObj = new Date(editStartDate + "T00:00:00");
+        const day = startDateObj.getDate();
 
-        let nextRunDate = editItem.next_run_date;
-        if (dayChanged) {
-            const now = new Date();
-            const nextRun = now.getDate() < day
-                ? new Date(now.getFullYear(), now.getMonth(), day)
-                : new Date(now.getFullYear(), now.getMonth() + 1, day);
-            nextRunDate = nextRun.toISOString().split("T")[0];
+        let totalInstalments: number | null = null;
+        if (editScheduleType === 'one-time') {
+            totalInstalments = 1;
+        } else if (editScheduleType === 'instalment') {
+            totalInstalments = parseInt(editTotalInstalments);
         }
 
-        // If switching from instalment (completed) back to forever or a new total, reactivate
-        const wasCompleted = editItem.total_instalments !== null &&
-            editItem.instalments_paid >= editItem.total_instalments;
-        const isActive = wasCompleted
-            ? (totalInstalments === null || totalInstalments > editItem.instalments_paid)
-            : editItem.is_active;
+        if (editScheduleType === 'instalment') {
+            if (!totalInstalments || totalInstalments < 1) {
+                toast.error("Total months must be at least 1");
+                setSaving(false);
+                return;
+            }
+            if (!isNew && totalInstalments < currentItem!.instalments_paid) {
+                toast.error(`Total months can't be less than months already paid (${currentItem!.instalments_paid})`);
+                setSaving(false);
+                return;
+            }
+        }
 
-        const { error } = await supabase
-            .from("recurring_transactions")
-            .update({
-                merchant_name: editMerchant.trim() || null,
-                amount: Number(editAmount),
-                type: editType,
-                category_id: editCategoryId || null,
-                wallet_id: editWalletId || null,
-                day_of_month: day,
-                next_run_date: nextRunDate,
-                note: editNote.trim() || null,
-                total_instalments: totalInstalments,
-                is_active: isActive,
-            })
-            .eq("id", editItem.id);
+        const nextRunDate = editStartDate;
 
-        if (error) {
-            toast.error("Failed to update recurring schedule");
+
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (isNew) {
+            let nextRunDate = editStartDate;
+            let instalmentsPaid = 0;
+
+            if (editRecordNow) {
+                // If recording now, the "next" run is next month
+                const nextMonthDate = getNextRecurringDate(day, new Date(startDateObj.getTime() + 86400000));
+                nextRunDate = toISODateString(nextMonthDate);
+                instalmentsPaid = 1;
+            }
+
+            const { data: recurringData, error: recurringError } = await supabase
+                .from("recurring_transactions")
+                .insert({
+                    user_id: user?.id,
+                    merchant_name: editMerchant.trim() || null,
+                    amount: Number(editAmount),
+                    type: editType,
+                    category_id: editCategoryId || null,
+                    wallet_id: editWalletId || null,
+                    day_of_month: day,
+                    next_run_date: nextRunDate,
+                    note: editNote.trim() || null,
+                    total_instalments: totalInstalments,
+                    is_active: true,
+                    instalments_paid: instalmentsPaid,
+                })
+                .select()
+                .single();
+
+            if (recurringError || !recurringData) {
+                toast.error("Failed to create recurring schedule");
+            } else {
+                if (editRecordNow) {
+                    const { error: txError } = await supabase.from("transactions").insert({
+                        amount: Number(editAmount),
+                        type: editType,
+                        wallet_id: editWalletId,
+                        category_id: editCategoryId || null,
+                        date: editStartDate,
+                        merchant_name: editMerchant.trim() || null,
+                        note: editNote.trim() || "Recorded from schedule creation",
+                        user_id: user?.id,
+                        recurring_id: recurringData.id,
+                    });
+
+                    if (txError) toast.error("Schedule created, but failed to record first transaction");
+                    else toast.success("Schedule created & first payment recorded");
+                } else {
+                    toast.success("Recurring schedule created");
+                }
+                setEditItem(null);
+                fetchData();
+            }
         } else {
-            toast.success("Recurring schedule updated");
-            setEditItem(null);
-            fetchData();
+            // If switching from instalment (completed) back to forever or a new total, reactivate
+            const wasCompleted = currentItem!.total_instalments !== null &&
+                currentItem!.instalments_paid >= currentItem!.total_instalments;
+            const isActive = wasCompleted
+                ? (totalInstalments === null || totalInstalments > currentItem!.instalments_paid)
+                : currentItem!.is_active;
+
+            const { error } = await supabase
+                .from("recurring_transactions")
+                .update({
+                    merchant_name: editMerchant.trim() || null,
+                    amount: Number(editAmount),
+                    type: editType,
+                    category_id: editCategoryId || null,
+                    wallet_id: editWalletId || null,
+                    day_of_month: day,
+                    next_run_date: nextRunDate,
+                    note: editNote.trim() || null,
+                    total_instalments: totalInstalments,
+                    is_active: isActive,
+                })
+                .eq("id", currentItem!.id);
+
+            if (error) {
+                toast.error("Failed to update recurring schedule");
+            } else {
+                toast.success("Recurring schedule updated");
+                setEditItem(null);
+                fetchData();
+            }
         }
         setSaving(false);
     };
@@ -257,8 +340,13 @@ export default function RecurringPage() {
                                     {item.type}
                                 </Badge>
                                 {isInstalment && (
-                                    <Badge variant="outline" className="text-[9px] sm:text-[10px] font-black uppercase tracking-tighter px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full border-violet-100 bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:border-violet-500/20 shrink-0">
-                                        Instalment
+                                    <Badge variant="outline" className={cn(
+                                        "text-[9px] sm:text-[10px] font-black uppercase tracking-tighter px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full shrink-0",
+                                        item.total_instalments === 1
+                                            ? "border-amber-100 bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:border-amber-500/20"
+                                            : "border-violet-100 bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:border-violet-500/20"
+                                    )}>
+                                        {item.total_instalments === 1 ? "One-Time" : "Instalment"}
                                     </Badge>
                                 )}
                             </div>
@@ -272,7 +360,7 @@ export default function RecurringPage() {
                                     </>
                                 )}
                                 <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700 shrink-0" />
-                                <span className="shrink-0">Day {item.day_of_month}</span>
+                                <span className="shrink-0">{item.total_instalments === 1 ? `Date: ${item.next_run_date}` : `Day ${item.day_of_month}`}</span>
                             </div>
 
                             {/* Amount and Next Run */}
@@ -376,6 +464,15 @@ export default function RecurringPage() {
                         {recurring.length} scheduled {recurring.length === 1 ? "entry" : "entries"}
                     </p>
                 </div>
+                <div className="flex items-center gap-2">
+                    <Button
+                        onClick={openCreate}
+                        className="h-10 sm:h-11 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 text-sm font-bold shadow-lg shadow-slate-200 dark:shadow-none transition-all duration-300 hover:scale-[1.02] px-4 sm:px-5"
+                    >
+                        <Plus className="w-4 h-4 mr-1.5 sm:mr-2" />
+                        Add New
+                    </Button>
+                </div>
             </div>
 
             {/* Stats */}
@@ -456,13 +553,22 @@ export default function RecurringPage() {
                 </div>
             )}
 
-            {/* Edit Dialog */}
+            {/* Edit / Create Dialog */}
             <Dialog open={!!editItem} onOpenChange={(open) => !open && setEditItem(null)}>
-                <DialogContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 max-w-md shadow-xl">
+                <DialogContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
-                            <Pencil className="w-4 h-4 text-violet-500" />
-                            Edit Recurring Schedule
+                            {editItem === 'new' ? (
+                                <>
+                                    <Plus className="w-4 h-4 text-violet-500" />
+                                    Add Recurring Schedule
+                                </>
+                            ) : (
+                                <>
+                                    <Pencil className="w-4 h-4 text-violet-500" />
+                                    Edit Recurring Schedule
+                                </>
+                            )}
                         </DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-2">
@@ -544,18 +650,18 @@ export default function RecurringPage() {
                             </Select>
                         </div>
 
-                        {/* Day of Month */}
+                        {/* Date Start */}
                         <div className="space-y-1.5">
-                            <Label className="text-slate-600 dark:text-slate-400">Day of Month (1–28)</Label>
+                            <Label className="text-slate-600 dark:text-slate-400">Date Start</Label>
                             <Input
-                                type="number"
-                                inputMode="decimal"
-                                min="1"
-                                max="28"
-                                value={editDayOfMonth}
-                                onChange={(e) => setEditDayOfMonth(e.target.value)}
-                                className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+                                type="date"
+                                value={editStartDate}
+                                onChange={(e) => setEditStartDate(e.target.value)}
+                                className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 block w-full"
                             />
+                            <p className="text-[10px] text-slate-400 leading-tight">
+                                The first payment will be scheduled for this date.
+                            </p>
                         </div>
 
                         {/* Schedule Type */}
@@ -564,10 +670,10 @@ export default function RecurringPage() {
                             <div className="flex rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
                                 <button
                                     type="button"
-                                    onClick={() => setEditIsInstalment(false)}
+                                    onClick={() => setEditScheduleType('forever')}
                                     className={cn(
                                         "flex-1 py-2 text-sm font-medium transition-colors",
-                                        !editIsInstalment
+                                        editScheduleType === 'forever'
                                             ? "bg-violet-600 text-white"
                                             : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
                                     )}
@@ -576,38 +682,79 @@ export default function RecurringPage() {
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => setEditIsInstalment(true)}
+                                    onClick={() => setEditScheduleType('instalment')}
                                     className={cn(
-                                        "flex-1 py-2 text-sm font-medium transition-colors",
-                                        editIsInstalment
+                                        "flex-1 py-2 text-sm font-medium transition-colors border-x border-slate-200 dark:border-slate-700",
+                                        editScheduleType === 'instalment'
                                             ? "bg-violet-600 text-white"
                                             : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
                                     )}
                                 >
                                     Instalment
                                 </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setEditScheduleType('one-time')}
+                                    className={cn(
+                                        "flex-1 py-2 text-sm font-medium transition-colors",
+                                        editScheduleType === 'one-time'
+                                            ? "bg-violet-600 text-white"
+                                            : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                    )}
+                                >
+                                    One-Time
+                                </button>
                             </div>
                         </div>
 
                         {/* Total Instalments (shown only when Instalment is selected) */}
-                        {editIsInstalment && (
-                            <div className="space-y-1.5">
+                        {editScheduleType === 'instalment' && (
+                            <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
                                 <Label className="text-slate-600 dark:text-slate-400">Total Months</Label>
                                 <Input
                                     type="number"
                                     inputMode="decimal"
-                                    min={editItem ? Math.max(1, editItem.instalments_paid) : 1}
+                                    min={editItem !== 'new' && editItem ? Math.max(1, (editItem as RecurringTransactionWithCategory).instalments_paid) : 1}
                                     step="1"
                                     value={editTotalInstalments}
                                     onChange={(e) => setEditTotalInstalments(e.target.value)}
                                     placeholder="e.g. 12"
                                     className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
                                 />
-                                {editItem && editItem.instalments_paid > 0 && (
+                                {editItem !== 'new' && editItem && editItem.instalments_paid > 0 && (
                                     <p className="text-[11px] text-slate-400">
                                         {editItem.instalments_paid} month{editItem.instalments_paid !== 1 ? "s" : ""} already paid — total must be at least {editItem.instalments_paid + 1}
                                     </p>
                                 )}
+                            </div>
+                        )}
+
+                        {/* Record Now Toggle (only for new) */}
+                        {editItem === 'new' && (
+                            <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                                <div className="flex items-center justify-between py-2">
+                                    <div className="space-y-0.5">
+                                        <Label className="text-sm font-bold text-slate-700 dark:text-slate-200">Record first payment now?</Label>
+                                        <p className="text-[10px] text-slate-400 leading-tight">
+                                            {editRecordNow
+                                                ? "Creates a payment today & schedules the next one."
+                                                : "Only creates the schedule. No transaction recorded today."}
+                                        </p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setEditRecordNow(!editRecordNow)}
+                                        className={cn(
+                                            "w-10 h-5 rounded-full relative flex items-center transition-colors",
+                                            editRecordNow ? "bg-violet-600" : "bg-slate-300 dark:bg-slate-700"
+                                        )}
+                                    >
+                                        <span className={cn(
+                                            "absolute w-4 h-4 bg-white rounded-full shadow transition-all",
+                                            editRecordNow ? "left-[22px]" : "left-0.5"
+                                        )} />
+                                    </button>
+                                </div>
                             </div>
                         )}
 
@@ -631,7 +778,7 @@ export default function RecurringPage() {
                             disabled={saving || !editAmount || Number(editAmount) <= 0}
                             className="bg-violet-600 hover:bg-violet-700 text-white"
                         >
-                            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Changes"}
+                            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : editItem === 'new' ? "Add Schedule" : "Save Changes"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

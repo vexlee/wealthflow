@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { useCurrency } from "@/contexts/currency-context";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, getNextRecurringDate, toISODateString } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
@@ -36,9 +36,6 @@ function TransactionsContent() {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [saving, setSaving] = useState(false);
 
-    // Undo delete
-    const pendingDeleteRef = useRef<{ id: string; timer: NodeJS.Timeout } | null>(null);
-
     // Filters
     const [filterType, setFilterType] = useState<string>("all");
     const [filterWallet, setFilterWallet] = useState<string>("all");
@@ -58,8 +55,9 @@ function TransactionsContent() {
 
     // Recurring form state
     const [isRecurring, setIsRecurring] = useState(false);
-    const [recurringType, setRecurringType] = useState<"monthly" | "instalments">("monthly");
+    const [recurringType, setRecurringType] = useState<"monthly" | "instalments" | "one-time">("monthly");
     const [numInstalments, setNumInstalments] = useState("3");
+    const [recordNow, setRecordNow] = useState(true);
 
     // Transfer state
     const [transferOpen, setTransferOpen] = useState(false);
@@ -82,6 +80,7 @@ function TransactionsContent() {
         setIsRecurring(false);
         setRecurringType("monthly");
         setNumInstalments("3");
+        setRecordNow(true);
     }, [wallets]);
 
     const openCreate = useCallback(() => {
@@ -233,6 +232,9 @@ function TransactionsContent() {
     useEffect(() => {
         if (searchParams.get("new") === "true" && !loading) {
             openCreate();
+            if (searchParams.get("recurring") === "true") {
+                setIsRecurring(true);
+            }
             // Clean URL without refresh
             window.history.replaceState(null, "", "/transactions");
         }
@@ -345,6 +347,7 @@ function TransactionsContent() {
         setIsRecurring(false);
         setRecurringType("monthly");
         setNumInstalments("3");
+        setRecordNow(true);
         setDialogOpen(true);
     };
 
@@ -373,11 +376,19 @@ function TransactionsContent() {
                 // Derive day of month from the chosen date
                 const selectedDate = new Date(date + "T00:00:00");
                 const dayOfMonth = selectedDate.getDate();
-                const totalInstalments = recurringType === "instalments" ? parseInt(numInstalments) : null;
+                const totalInstalments =
+                    recurringType === "one-time" ? 1 :
+                        recurringType === "instalments" ? parseInt(numInstalments) : null;
 
-                // Calculate next run date as the following month since the first payment is created now
-                const nextMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, dayOfMonth);
-                const nextRunDate = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, "0")}-${String(nextMonth.getDate()).padStart(2, "0")}`;
+                let nextRunDate = date;
+                let instalmentsPaid = 0;
+
+                if (recordNow) {
+                    // If recording now, the "next" run is next month
+                    const nextMonthDate = getNextRecurringDate(dayOfMonth, new Date(selectedDate.getTime() + 86400000));
+                    nextRunDate = toISODateString(nextMonthDate);
+                    instalmentsPaid = 1;
+                }
 
                 // 1. Create the recurring template
                 const { data: recurringData, error: recurringError } = await supabase
@@ -394,7 +405,7 @@ function TransactionsContent() {
                         is_active: true,
                         next_run_date: nextRunDate,
                         total_instalments: totalInstalments,
-                        instalments_paid: 1,
+                        instalments_paid: instalmentsPaid,
                     })
                     .select()
                     .single();
@@ -405,19 +416,25 @@ function TransactionsContent() {
                     return;
                 }
 
-                // 2. Insert the first transaction linked to the recurring template
-                const { error: txError } = await supabase.from("transactions").insert({
-                    ...txData,
-                    user_id: user?.id,
-                    recurring_id: recurringData.id,
-                });
+                // 2. Insert the transaction ONLY if "Record Now" is checked
+                if (recordNow) {
+                    const { error: txError } = await supabase.from("transactions").insert({
+                        ...txData,
+                        user_id: user?.id,
+                        recurring_id: recurringData.id,
+                    });
 
-                if (txError) toast.error("Failed to add transaction");
-                else {
-                    const modeLabel = recurringType === "instalments"
-                        ? `${numInstalments}-month instalment`
-                        : "monthly recurring";
-                    toast.success(`Transaction added as ${modeLabel}`);
+                    if (txError) toast.error("Failed to add transaction");
+                    else {
+                        const modeLabel = recurringType === "one-time"
+                            ? "one-time scheduled"
+                            : recurringType === "instalments"
+                                ? `${numInstalments}-month instalment`
+                                : "monthly recurring";
+                        toast.success(`Schedule created & transaction added as ${modeLabel}`);
+                    }
+                } else {
+                    toast.success("Recurring schedule created");
                 }
             } else {
                 const { error } = await supabase.from("transactions").insert({ ...txData, user_id: user?.id });
@@ -432,86 +449,57 @@ function TransactionsContent() {
         refreshData();
     };
 
-    const handleDeleteWithUndo = (id: string) => {
-        // Cancel any pending delete
-        if (pendingDeleteRef.current) {
-            clearTimeout(pendingDeleteRef.current.timer);
-            pendingDeleteRef.current = null;
-        }
-
-        // Snapshot the item for potential restore
+    const handleDelete = async (id: string) => {
         const deletedTx = transactions.find((tx) => tx.id === id);
         if (!deletedTx) return;
 
         // Optimistically remove from local state
         setTransactions((prev) => prev.filter((tx) => tx.id !== id));
         setDialogOpen(false);
+        setSaving(true);
 
-        // Schedule the actual DB delete after 5 seconds
-        const timer = setTimeout(async () => {
-            pendingDeleteRef.current = null;
+        // If it's a payment for a recurring transaction, we need to revert the next_run_date
+        if (deletedTx.recurring_id && deletedTx.type === "expense") {
+            const { data: recurData } = await supabase
+                .from("recurring_transactions")
+                .select("*")
+                .eq("id", deletedTx.recurring_id)
+                .single();
 
-            // If it's a payment for a recurring transaction, we need to revert the next_run_date
-            if (deletedTx.recurring_id && deletedTx.type === "expense") {
-                const { data: recurData } = await supabase
-                    .from("recurring_transactions")
-                    .select("*")
-                    .eq("id", deletedTx.recurring_id)
-                    .single();
+            if (recurData) {
+                const currentNextRun = new Date(recurData.next_run_date);
+                // Revert by 1 month
+                const prevNextRun = new Date(currentNextRun.setMonth(currentNextRun.getMonth() - 1));
 
-                if (recurData) {
-                    const currentNextRun = new Date(recurData.next_run_date);
-                    // Revert by 1 month
-                    const prevNextRun = new Date(currentNextRun.setMonth(currentNextRun.getMonth() - 1));
+                const updates: any = {
+                    next_run_date: prevNextRun.toISOString().split("T")[0],
+                };
 
-                    const updates: any = {
-                        next_run_date: prevNextRun.toISOString().split("T")[0],
-                    };
-
-                    if (recurData.total_instalments !== null && recurData.instalments_paid > 0) {
-                        updates.instalments_paid = recurData.instalments_paid - 1;
-                        if (updates.instalments_paid < recurData.total_instalments) {
-                            updates.is_active = true;
-                        }
+                if (recurData.total_instalments !== null && recurData.instalments_paid > 0) {
+                    updates.instalments_paid = recurData.instalments_paid - 1;
+                    if (updates.instalments_paid < recurData.total_instalments) {
+                        updates.is_active = true;
                     }
-
-                    await supabase
-                        .from("recurring_transactions")
-                        .update(updates)
-                        .eq("id", deletedTx.recurring_id);
                 }
+
+                await supabase
+                    .from("recurring_transactions")
+                    .update(updates)
+                    .eq("id", deletedTx.recurring_id);
             }
+        }
 
-            const { error } = await supabase.from("transactions").delete().eq("id", id);
-            if (error) {
-                // Restore on failure
-                setTransactions((prev) => [deletedTx, ...prev].sort((a, b) =>
-                    (b.date || "").localeCompare(a.date || "")
-                ));
-                toast.error("Failed to delete transaction");
-            }
-        }, 5000);
-
-        pendingDeleteRef.current = { id, timer };
-
-        // Show undo toast
-        toast("Transaction deleted", {
-            action: {
-                label: "Undo",
-                onClick: () => {
-                    if (pendingDeleteRef.current?.id === id) {
-                        clearTimeout(pendingDeleteRef.current.timer);
-                        pendingDeleteRef.current = null;
-                    }
-                    // Restore the item
-                    setTransactions((prev) => [deletedTx, ...prev].sort((a, b) =>
-                        (b.date || "").localeCompare(a.date || "")
-                    ));
-                    toast.success("Transaction restored");
-                },
-            },
-            duration: 5000,
-        });
+        const { error } = await supabase.from("transactions").delete().eq("id", id);
+        if (error) {
+            // Restore on failure
+            setTransactions((prev) => [deletedTx, ...prev].sort((a, b) =>
+                (b.date || "").localeCompare(a.date || "")
+            ));
+            toast.error("Failed to delete transaction");
+        } else {
+            toast.success("Transaction deleted");
+        }
+        setSaving(false);
     };
 
 
@@ -782,7 +770,8 @@ function TransactionsContent() {
                             <Button
                                 variant="ghost"
                                 className="text-red-500 hover:text-red-600 hover:bg-red-50 mr-auto"
-                                onClick={() => handleDeleteWithUndo(editId)}
+                                onClick={() => handleDelete(editId)}
+                                disabled={saving}
                             >
                                 <Trash2 className="w-4 h-4 mr-1" />
                                 Delete
@@ -920,9 +909,9 @@ function TransactionsContent() {
                                     </div>
                                     <div className="text-left">
                                         <p className={cn("text-sm font-medium", isRecurring ? "text-violet-700 dark:text-violet-300" : "text-slate-600 dark:text-slate-400")}>
-                                            Make Recurring
+                                            Schedule Payment
                                         </p>
-                                        <p className="text-[11px] text-slate-400">Repeat automatically each month</p>
+                                        <p className="text-[11px] text-slate-400">Recurring or scheduled one-time payment</p>
                                     </div>
                                 </div>
                                 <div className={cn(
@@ -945,25 +934,37 @@ function TransactionsContent() {
                                             type="button"
                                             onClick={() => setRecurringType("monthly")}
                                             className={cn(
-                                                "flex-1 text-xs font-medium py-1.5 px-2 rounded-md transition-all",
+                                                "flex-1 text-[10px] sm:text-xs font-medium py-1.5 px-1 rounded-md transition-all",
                                                 recurringType === "monthly"
                                                     ? "bg-white dark:bg-slate-700 text-violet-600 dark:text-violet-400 shadow-sm"
                                                     : "text-slate-500 hover:text-slate-700"
                                             )}
                                         >
-                                            🔁 Monthly (forever)
+                                            🔁 Monthly
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => setRecurringType("instalments")}
                                             className={cn(
-                                                "flex-1 text-xs font-medium py-1.5 px-2 rounded-md transition-all",
+                                                "flex-1 text-[10px] sm:text-xs font-medium py-1.5 px-1 rounded-md transition-all border-x border-slate-200 dark:border-slate-600",
                                                 recurringType === "instalments"
                                                     ? "bg-white dark:bg-slate-700 text-violet-600 dark:text-violet-400 shadow-sm"
                                                     : "text-slate-500 hover:text-slate-700"
                                             )}
                                         >
                                             📅 Instalment
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setRecurringType("one-time")}
+                                            className={cn(
+                                                "flex-1 text-[10px] sm:text-xs font-medium py-1.5 px-1 rounded-md transition-all",
+                                                recurringType === "one-time"
+                                                    ? "bg-white dark:bg-slate-700 text-violet-600 dark:text-violet-400 shadow-sm"
+                                                    : "text-slate-500 hover:text-slate-700"
+                                            )}
+                                        >
+                                            ⏱ One-Time
                                         </button>
                                     </div>
 
@@ -994,6 +995,35 @@ function TransactionsContent() {
                                             Repeats on day {date ? new Date(date + "T00:00:00").getDate() : "—"} of each month indefinitely
                                         </p>
                                     )}
+
+                                    {recurringType === "one-time" && (
+                                        <p className="text-[11px] text-slate-400 px-1">
+                                            One-time scheduled payment for {date ? new Date(date + "T00:00:00").toLocaleDateString(undefined, { dateStyle: 'medium' }) : "—"}
+                                        </p>
+                                    )}
+
+                                    {/* Record Now Toggle */}
+                                    <div className="flex items-center justify-between px-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                                        <Label className="text-[11px] font-medium text-slate-600 dark:text-slate-400">Record first payment now?</Label>
+                                        <button
+                                            type="button"
+                                            onClick={() => setRecordNow(!recordNow)}
+                                            className={cn(
+                                                "w-8 h-4 rounded-full relative flex items-center transition-colors",
+                                                recordNow ? "bg-violet-500" : "bg-slate-300 dark:bg-slate-600"
+                                            )}
+                                        >
+                                            <span className={cn(
+                                                "absolute w-3 h-3 bg-white rounded-full shadow transition-all",
+                                                recordNow ? "left-4.5" : "left-0.5"
+                                            )} />
+                                        </button>
+                                    </div>
+                                    <p className="text-[10px] text-slate-400 italic px-2">
+                                        {recordNow
+                                            ? "Creates a 'Posted' transaction today and schedules the next one."
+                                            : "Only creates the schedule. No transaction recorded yet."}
+                                    </p>
                                 </div>
                             )}
                         </div>
