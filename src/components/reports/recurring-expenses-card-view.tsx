@@ -93,14 +93,15 @@ export function RecurringExpensesCardView({
                 walletTotals[recurWalletId] += remainingBalance;
             }
 
-            // Always add to the list so users can see paid items
+            // Always add to the list — never auto-mark as paid
             walletRecurringTxs[recurWalletId].push({
                 ...recur,
                 remainingBalance: Math.max(0, remainingBalance),
                 paymentAmount: remainingBalance > 0 ? remainingBalance.toString() : "0.00",
                 sourceWalletId: recurWalletId,
-                selected: remainingBalance <= 0.01,
-                isPaid: remainingBalance <= 0.01,
+                selected: false,
+                isPaid: false,
+                isFullyPaid: remainingBalance <= 0.01,
             });
         });
 
@@ -124,7 +125,7 @@ export function RecurringExpensesCardView({
     };
 
     const handleConfirmPayment = async () => {
-        const selectedItems = modalItems.filter(item => item.selected && !item.isPaid);
+        const selectedItems = modalItems.filter(item => item.selected && !item.isFullyPaid);
         if (selectedItems.length === 0) {
             toast.error("Please select at least one transaction to pay");
             return;
@@ -221,14 +222,14 @@ export function RecurringExpensesCardView({
         }
     };
 
-    // Show wallets that have overdue amounts
+    // Show wallets that have recurring transactions (including fully paid ones)
     const activeWallets = wallets
         .filter(wallet => recurringData.walletRecurringTxs[wallet.id] && recurringData.walletRecurringTxs[wallet.id].length > 0)
         .map(wallet => ({
             ...wallet,
-            totalDue: recurringData.walletTotals[wallet.id] || 0
-        }))
-        .filter(wallet => wallet.totalDue > 0);
+            totalDue: recurringData.walletTotals[wallet.id] || 0,
+            allPaid: (recurringData.walletTotals[wallet.id] || 0) <= 0.01,
+        }));
 
     if (activeWallets.length === 0) return null;
 
@@ -290,26 +291,27 @@ export function RecurringExpensesCardView({
 
                     <div className="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar space-y-4">
                         {modalItems.map((item, index) => (
-                            <div key={item.id} className={cn("p-4 rounded-2xl border bg-slate-50/50 dark:bg-slate-800/20 space-y-3", item.isPaid ? "opacity-60 border-indigo-100 dark:border-indigo-900/30" : "border-slate-100 dark:border-slate-800")}>
+                            <div key={item.id} className={cn("p-4 rounded-2xl border bg-slate-50/50 dark:bg-slate-800/20 space-y-3", item.isFullyPaid ? "opacity-60 border-emerald-100 dark:border-emerald-900/30" : "border-slate-100 dark:border-slate-800")}>
                                 <div className="flex items-start gap-3">
                                     <Checkbox
                                         id={`check-${item.id}`}
                                         checked={item.selected}
                                         onCheckedChange={(checked) => updateModalItem(index, 'selected', checked === true)}
-                                        disabled={item.isPaid}
-                                        className={cn("mt-1", item.isPaid && "opacity-100 data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600")}
+                                        disabled={item.isFullyPaid}
+                                        className={cn("mt-1", item.isFullyPaid && "opacity-100 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600")}
                                     />
                                     <div className="flex-1 min-w-0">
-                                        <label htmlFor={`check-${item.id}`} className={cn("text-sm font-bold block", item.isPaid ? "text-slate-500 cursor-default line-through" : "text-slate-900 dark:text-white cursor-pointer")}>
+                                        <label htmlFor={`check-${item.id}`} className={cn("text-sm font-bold block", item.isFullyPaid ? "text-emerald-600 dark:text-emerald-400 cursor-default" : "text-slate-900 dark:text-white cursor-pointer")}>
                                             {item.merchant_name || item.categories?.name || 'Recurring Transaction'}
+                                            {item.isFullyPaid && " ✓"}
                                         </label>
                                         <p className="text-xs font-medium text-slate-500 mt-0.5">
-                                            {item.isPaid ? "Paid in full" : `Remaining: ${formatCurrency(item.remainingBalance, currency)}`}
+                                            {item.isFullyPaid ? "Paid in full" : `Remaining: ${formatCurrency(item.remainingBalance, currency)}`}
                                         </p>
                                     </div>
                                 </div>
 
-                                {item.selected && !item.isPaid && (
+                                {item.selected && !item.isFullyPaid && (
                                     <div className="pl-7 grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 pt-3 border-t border-slate-200/50 dark:border-slate-700/50 animate-in fade-in slide-in-from-top-2 duration-200">
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Payment Amount</label>
@@ -362,7 +364,7 @@ export function RecurringExpensesCardView({
                         <Button
                             type="button"
                             onClick={handleConfirmPayment}
-                            disabled={!modalItems.some(i => i.selected && !i.isPaid) || isSubmitting}
+                            disabled={!modalItems.some(i => i.selected && !i.isFullyPaid) || isSubmitting}
                             className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/30"
                         >
                             {isSubmitting ? "Processing..." : "Confirm Payment"}
