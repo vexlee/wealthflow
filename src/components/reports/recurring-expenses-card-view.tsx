@@ -53,12 +53,8 @@ export function RecurringExpensesCardView({
         const walletTotals: Record<string, number> = {};
         const walletRecurringTxs: Record<string, any[]> = {};
 
-        // Only look at current or past months if projected, but user wants to see current month unpaid things.
-        const today = new Date();
         const year = currentMonth.getFullYear();
         const month = currentMonth.getMonth();
-
-        // If viewing a future month, maybe not show due yet? We'll show it for the viewed month.
 
         recurringTransactions.forEach((recur) => {
             if (recur.type !== "expense") return;
@@ -66,13 +62,12 @@ export function RecurringExpensesCardView({
             const recurWalletId = recur.wallet_id;
             if (!recurWalletId) return;
 
-            // Use next_run_date as the single source of truth for "paid".
-            // If next_run_date has been advanced past the current month, the expense
-            // was already confirmed as paid — exclude it from the due list entirely.
             const nextRunDate = new Date(recur.next_run_date);
             const nextRunMonthValue = nextRunDate.getFullYear() * 12 + nextRunDate.getMonth();
             const targetMonthValue = year * 12 + month;
-            if (nextRunMonthValue > targetMonthValue) return; // already paid, skip
+
+            // Check if it's already paid for the viewed month
+            const isPaid = nextRunMonthValue > targetMonthValue;
 
             const fullAmount = Number(recur.amount);
 
@@ -81,22 +76,24 @@ export function RecurringExpensesCardView({
                 walletRecurringTxs[recurWalletId] = [];
             }
 
-            // Always show the full amount — never subtract existing transactions,
-            // because that can make the balance appear as 0 before the user marks it paid.
-            walletTotals[recurWalletId] += fullAmount;
+            // Only sum up unpaid amounts
+            if (!isPaid) {
+                walletTotals[recurWalletId] += fullAmount;
+            }
 
-            // Never auto-select or disable — user must manually mark as paid
+            // Show all items in checklist as user requested
             walletRecurringTxs[recurWalletId].push({
                 ...recur,
                 remainingBalance: fullAmount,
                 paymentAmount: fullAmount.toString(),
                 sourceWalletId: recurWalletId,
                 selected: false,
+                isPaid,
             });
         });
 
         return { walletTotals, walletRecurringTxs };
-    }, [recurringTransactions, actualTransactions, currentMonth]);
+    }, [recurringTransactions, currentMonth]);
 
     // Active items in modal
     const [modalItems, setModalItems] = useState<any[]>([]);
@@ -283,21 +280,29 @@ export function RecurringExpensesCardView({
                                 <div className="flex items-start gap-3">
                                     <Checkbox
                                         id={`check-${item.id}`}
-                                        checked={item.selected}
-                                        onCheckedChange={(checked) => updateModalItem(index, 'selected', checked === true)}
+                                        checked={item.isPaid || item.selected}
+                                        onCheckedChange={(checked) => !item.isPaid && updateModalItem(index, 'selected', checked === true)}
+                                        disabled={item.isPaid}
                                         className="mt-1"
                                     />
                                     <div className="flex-1 min-w-0">
-                                        <label htmlFor={`check-${item.id}`} className="text-sm font-bold block text-slate-900 dark:text-white cursor-pointer">
+                                        <label
+                                            htmlFor={`check-${item.id}`}
+                                            className={cn(
+                                                "text-sm font-bold block",
+                                                item.isPaid ? "text-slate-400 dark:text-slate-500 line-through cursor-not-allowed" : "text-slate-900 dark:text-white cursor-pointer"
+                                            )}
+                                        >
                                             {item.merchant_name || item.categories?.name || 'Recurring Transaction'}
+                                            {item.isPaid && <span className="ml-2 text-[10px] text-emerald-500 font-bold tracking-widest uppercase no-underline inline-block">(Paid)</span>}
                                         </label>
-                                        <p className="text-xs font-medium text-slate-500 mt-0.5">
+                                        <p className={cn("text-xs font-medium mt-0.5", item.isPaid ? "text-slate-400/50 dark:text-slate-600 line-through" : "text-slate-500")}>
                                             {`Amount: ${formatCurrency(Number(item.amount), currency)}`}
                                         </p>
                                     </div>
                                 </div>
 
-                                {item.selected && (
+                                {item.selected && !item.isPaid && (
                                     <div className="pl-7 grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 pt-3 border-t border-slate-200/50 dark:border-slate-700/50 animate-in fade-in slide-in-from-top-2 duration-200">
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Payment Amount</label>

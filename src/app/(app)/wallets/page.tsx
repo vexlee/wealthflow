@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Plus, Wallet, Loader2, Trash2, ArrowUpRight, ArrowDownLeft } from "lucide-react";
+import { Plus, Wallet, Loader2, Trash2, ArrowUpRight, ArrowDownLeft, Repeat } from "lucide-react";
 import { toast } from "sonner";
 import { formatDateShort } from "@/lib/utils";
 import type { Wallet as WalletType, Transaction } from "@/types/database";
@@ -59,6 +59,15 @@ export default function WalletsPage() {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [saving, setSaving] = useState(false);
     const [editWallet, setEditWallet] = useState<WalletType | null>(null);
+
+    // Transfer state
+    const [transferOpen, setTransferOpen] = useState(false);
+    const [transferFrom, setTransferFrom] = useState("");
+    const [transferTo, setTransferTo] = useState("");
+    const [transferAmount, setTransferAmount] = useState("");
+    const [transferDate, setTransferDate] = useState(new Date().toISOString().split("T")[0]);
+    const [transferNote, setTransferNote] = useState("");
+    const [transferSaving, setTransferSaving] = useState(false);
 
     const { prices } = useCryptoPrices(wallets, currency);
 
@@ -126,6 +135,64 @@ export default function WalletsPage() {
         setIcon(wallet.icon || "💵");
         setColor(wallet.color || "#7c3aed");
         setDialogOpen(true);
+    };
+
+    const openTransfer = () => {
+        const nonCrypto = wallets.filter(w => w.type !== "crypto");
+        setTransferFrom(nonCrypto[0]?.id || "");
+        setTransferTo(nonCrypto[1]?.id || "");
+        setTransferAmount("");
+        setTransferDate(new Date().toISOString().split("T")[0]);
+        setTransferNote("");
+        setTransferOpen(true);
+    };
+
+    const handleTransfer = async () => {
+        if (!transferFrom || !transferTo || !transferAmount || transferFrom === transferTo) {
+            if (transferFrom === transferTo) toast.error("Source and destination must be different");
+            return;
+        }
+        setTransferSaving(true);
+
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            const fromWallet = wallets.find((w) => w.id === transferFrom);
+            const toWallet = wallets.find((w) => w.id === transferTo);
+            const transferRef = `transfer:${crypto.randomUUID().slice(0, 8)}`;
+            const amt = parseFloat(transferAmount);
+
+            const { error: err1 } = await supabase.from("transactions").insert({
+                amount: amt,
+                type: "expense",
+                wallet_id: transferFrom,
+                date: transferDate,
+                merchant_name: `Transfer to ${toWallet?.name || "wallet"}`,
+                note: transferNote ? `${transferRef} | ${transferNote}` : transferRef,
+                user_id: user?.id,
+            });
+
+            const { error: err2 } = await supabase.from("transactions").insert({
+                amount: amt,
+                type: "income",
+                wallet_id: transferTo,
+                date: transferDate,
+                merchant_name: `Transfer from ${fromWallet?.name || "wallet"}`,
+                note: transferNote ? `${transferRef} | ${transferNote}` : transferRef,
+                user_id: user?.id,
+            });
+
+            if (err1 || err2) {
+                toast.error("Transfer failed");
+            } else {
+                toast.success("Transfer completed");
+                setTransferOpen(false);
+                fetchWallets();
+            }
+        } catch (error) {
+            toast.error("Transfer failed");
+        } finally {
+            setTransferSaving(false);
+        }
     };
 
     const handleSave = async () => {
@@ -243,13 +310,25 @@ export default function WalletsPage() {
                         Total Balance: <span className="text-slate-900 dark:text-white font-bold">{formatCurrency(totalBalance, currency)}</span>
                     </p>
                 </div>
-                <Button
-                    onClick={openCreate}
-                    className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 rounded-2xl px-5 sm:px-6 h-11 sm:h-12 text-sm sm:text-base font-bold shadow-lg shadow-slate-200 dark:shadow-none transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
-                >
-                    <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" />
-                    Add Wallet
-                </Button>
+                <div className="flex items-center gap-2">
+                    {wallets.filter(w => w.type !== 'crypto').length >= 2 && (
+                        <Button
+                            onClick={openTransfer}
+                            variant="outline"
+                            className="h-11 sm:h-12 rounded-2xl border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-bold transition-all duration-300 px-4 sm:px-5"
+                        >
+                            <Repeat className="w-4 h-4 mr-1.5 sm:mr-2" />
+                            Transfer
+                        </Button>
+                    )}
+                    <Button
+                        onClick={openCreate}
+                        className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 rounded-2xl px-5 sm:px-6 h-11 sm:h-12 text-sm sm:text-base font-bold shadow-lg shadow-slate-200 dark:shadow-none transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                        <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" />
+                        Add Wallet
+                    </Button>
+                </div>
             </div>
 
             {/* Wallet Grid */}
@@ -485,6 +564,105 @@ export default function WalletsPage() {
                                 />
                             ))}
                         </div>
+                    </div>
+                </div>
+            </ResponsiveModal>
+
+            {/* Transfer Dialog */}
+            <ResponsiveModal
+                open={transferOpen}
+                onOpenChange={setTransferOpen}
+                title={
+                    <span className="flex items-center gap-2">
+                        <Repeat className="w-5 h-5 text-blue-500" />
+                        Transfer Between Wallets
+                    </span>
+                }
+                footer={
+                    <>
+                        <Button
+                            variant="outline"
+                            onClick={() => setTransferOpen(false)}
+                            className="border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleTransfer}
+                            disabled={transferSaving || !transferFrom || !transferTo || !transferAmount || transferFrom === transferTo}
+                            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white"
+                        >
+                            {transferSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Transfer"}
+                        </Button>
+                    </>
+                }
+            >
+                <div className="space-y-4 py-2">
+                    <div className="space-y-2">
+                        <Label className="text-slate-600 dark:text-slate-400">From Wallet</Label>
+                        <Select value={transferFrom} onValueChange={setTransferFrom}>
+                            <SelectTrigger className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">
+                                <SelectValue placeholder="Source wallet" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+                                {wallets.filter(w => w.type !== 'crypto').map((w) => (
+                                    <SelectItem key={w.id} value={w.id}>{w.icon} {w.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="flex justify-center">
+                        <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center">
+                            <ArrowDownLeft className="w-4 h-4 text-blue-500" />
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-slate-600 dark:text-slate-400">To Wallet</Label>
+                        <Select value={transferTo} onValueChange={setTransferTo}>
+                            <SelectTrigger className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">
+                                <SelectValue placeholder="Destination wallet" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+                                {wallets.filter((w) => w.type !== 'crypto' && w.id !== transferFrom).map((w) => (
+                                    <SelectItem key={w.id} value={w.id}>{w.icon} {w.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-slate-600 dark:text-slate-400">Amount</Label>
+                        <Input
+                            type="number"
+                            inputMode="decimal"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={transferAmount}
+                            onChange={(e) => setTransferAmount(e.target.value)}
+                            className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-lg font-semibold"
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-slate-600 dark:text-slate-400">Date</Label>
+                        <Input
+                            type="date"
+                            value={transferDate}
+                            onChange={(e) => setTransferDate(e.target.value)}
+                            className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100"
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-slate-600 dark:text-slate-400">Note (optional)</Label>
+                        <Input
+                            placeholder="e.g., Moving savings..."
+                            value={transferNote}
+                            onChange={(e) => setTransferNote(e.target.value)}
+                            className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100"
+                        />
                     </div>
                 </div>
             </ResponsiveModal>
